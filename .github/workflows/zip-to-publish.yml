@@ -18,7 +18,10 @@ jobs:
 
       - name: Create zip
         run: |
-          zip -r twingate-status@eudes.es.zip icons/ extension.js metadata.json stylesheet.css LICENSE
+          # Compile schemas before zip creation
+          mkdir -p schemas
+          glib-compile-schemas schemas/ || echo "Warning: Could not compile schemas"
+          zip -r twingate-status@eudes.es.zip icons/ schemas/ extension.js prefs.js locale.js metadata.json stylesheet.css LICENSE
 
       - name: Upload package
         uses: svenstaro/upload-release-action@v2

@@ -1,12 +1,17 @@
 {
   "name": "Twingate Status",
-  "description": "Shows a status icon on the Gnome top bar indicating Twingate's connection status. Clicking on the menu entry starts or stops the connection. Requires Twingate and systemd.",
+  "description": "Displays Twingate connection status in the top bar with available resources list. Click to start/stop connection. Supports multiple languages and connection states (online, authenticating, offline). Configurable preferences with enhanced display and scrolling.",
   "uuid": "twingate-status@eudes.es",
   "shell-version": [
-    "46"
+    "46",
+    "47",
+    "48",
+    "49"
   ],
   "url": "https://github.com/eudes/twingate-status-gnome",
   "donations": {
     "kofi": "eudesochoa"
-  }
+  },
+  "version": 2,
+  "settings-schema": "org.gnome.shell.extensions.twingate-status"
 }

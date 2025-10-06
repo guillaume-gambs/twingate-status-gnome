@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.twingate-status" path="/org/gnome/shell/extensions/twingate-status/">
+
+    <key name="language" type="s">
+      <default>"auto"</default>
+      <summary>Language</summary>
+      <description>Interface language (auto for system detection, en for English, fr for French)</description>
+    </key>
+
+    <key name="resource-refresh-interval" type="i">
+      <default>120</default>
+      <range min="30" max="600"/>
+      <summary>Resource Refresh Interval</summary>
+      <description>Interval in seconds to refresh the resource list when connected (30-600 seconds)</description>
+    </key>
+
+  </schema>
+</schemalist>

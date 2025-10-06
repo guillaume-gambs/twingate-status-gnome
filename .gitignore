@@ -1,5 +1,17 @@
 .idea
 *.iml
+# Compiled schemas (generated during installation)
+schemas/gschemas.compiled
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Logs
 logs
