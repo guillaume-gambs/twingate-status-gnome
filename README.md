@@ -20,7 +20,10 @@ Clicking on the menu entry starts or stops the connection.
   - 🇵🇹 Português
   - 🇳🇱 Nederlands
 
-- **Resource list**: View available Twingate resources directly from the menu when connected
+- **Resource list**: View available Twingate resources directly from the menu when connected, with visual authentication status per resource:
+  - 🔓 **Authenticated** (green border): Access granted, shows expiry
+  - ⏳ **Pending** (orange border): Authentication in progress
+  - 🔒 **Not authenticated** (grey border): No access yet
 
 - **Settings panel**: Configure Twingate settings through a graphical interface:
   - Autostart on boot
@@ -35,10 +38,10 @@ Clicking on the menu entry starts or stops the connection.
 - **Version display**: Shows the installed Twingate version in the menu
 
 ## Requirements
-Twingate for Linux should be installed before this extension. Your system should use Systemd (or have a `systemctl` shim).
+Twingate for Linux should be installed before this extension. `pkexec` (polkit) must be available to start/stop the Twingate service with elevated privileges.
 
 ## Compatibility
-Tested working on Arch/Manjaro and GNOME Shell 46-49.
+Tested working on Arch/Manjaro and GNOME Shell 46-50.
 
 This extension calls the following commands. If these don't work when you run them manually the extension won't be able to change the connection status.
 
@@ -46,23 +49,23 @@ This extension calls the following commands. If these don't work when you run th
 # Check status
 twingate status
 
-# Stop connection
-systemctl stop twingate
-systemctl stop --user twingate-desktop-notifier
+# Stop connection (service requires root via pkexec, desktop runs as user)
+pkexec twingate service-stop
+twingate desktop-stop
 ```
 
 ```shell
 # Start connection
-systemctl start twingate
-systemctl start --user twingate-desktop-notifier
+pkexec twingate service-start
+twingate desktop-start
 ```
 
 ```shell
-# View configuration
-twingate config
+# View configuration (requires root)
+pkexec twingate config
 
-# Modify configuration (requires sudo)
-sudo twingate config autostart true
+# Modify configuration (requires root)
+pkexec twingate config autostart true
 ```
 
 ## Installation
@@ -129,7 +132,7 @@ journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate
 ## Troubleshooting
 
 ### Extension not loading
-1. Check that GNOME Shell version is 46-49
+1. Check that GNOME Shell version is 46-50
 2. Ensure Twingate is installed: `which twingate`
 3. Verify schema compilation: `ls ~/.local/share/gnome-shell/extensions/twingate-status@eudes.es/schemas/gschemas.compiled`
 4. Check logs: `journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate`

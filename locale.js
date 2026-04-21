@@ -46,7 +46,10 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Consentement pour l\'envoi de rapports d\'erreur',
         'Log Level': 'Niveau de log',
         'Log verbosity level': 'Niveau de verbosité des logs',
-        'Select log level': 'Sélectionnez le niveau de log'
+        'Select log level': 'Sélectionnez le niveau de log',
+        'Refresh Configuration': 'Actualiser la configuration',
+        'Reload settings from Twingate': 'Recharger les paramètres depuis Twingate',
+        'Refresh': 'Actualiser'
     },
     'en': {
         'Connected': 'Connected',
@@ -92,7 +95,10 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Consent to send error reports',
         'Log Level': 'Log Level',
         'Log verbosity level': 'Log verbosity level',
-        'Select log level': 'Select log level'
+        'Select log level': 'Select log level',
+        'Refresh Configuration': 'Refresh Configuration',
+        'Reload settings from Twingate': 'Reload settings from Twingate',
+        'Refresh': 'Refresh'
     },
     'es': {
         'Connected': 'Conectado',
@@ -137,7 +143,10 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Consentimiento para enviar informes de errores',
         'Log Level': 'Nivel de registro',
         'Log verbosity level': 'Nivel de verbosidad del registro',
-        'Select log level': 'Seleccione el nivel de registro'
+        'Select log level': 'Seleccione el nivel de registro',
+        'Refresh Configuration': 'Actualizar configuración',
+        'Reload settings from Twingate': 'Recargar configuración desde Twingate',
+        'Refresh': 'Actualizar'
     },
     'de': {
         'Connected': 'Verbunden',
@@ -182,7 +191,10 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Zustimmung zum Senden von Fehlerberichten',
         'Log Level': 'Protokollstufe',
         'Log verbosity level': 'Protokoll-Ausführlichkeitsstufe',
-        'Select log level': 'Protokollstufe auswählen'
+        'Select log level': 'Protokollstufe auswählen',
+        'Refresh Configuration': 'Konfiguration aktualisieren',
+        'Reload settings from Twingate': 'Einstellungen von Twingate neu laden',
+        'Refresh': 'Aktualisieren'
     },
     'it': {
         'Connected': 'Connesso',
@@ -227,7 +239,11 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Consenso per inviare rapporti di errore',
         'Log Level': 'Livello di log',
         'Log verbosity level': 'Livello di verbosità del log',
-        'Select log level': 'Seleziona livello di log'
+        'Select log level': 'Seleziona livello di log',
+        'Refresh Configuration': 'Aggiorna configurazione',
+        'Reload settings from Twingate': 'Ricarica impostazioni da Twingate',
+        'Refresh': 'Aggiorna'
+
     },
     'pt': {
         'Connected': 'Conectado',
@@ -272,7 +288,11 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Consentimento para enviar relatórios de erro',
         'Log Level': 'Nível de log',
         'Log verbosity level': 'Nível de verbosidade do log',
-        'Select log level': 'Selecione o nível de log'
+        'Select log level': 'Selecione o nível de log',
+        'Refresh Configuration': 'Atualizar configuração',
+        'Reload settings from Twingate': 'Recarregar configurações do Twingate',
+        'Refresh': 'Atualizar'
+
     },
     'nl': {
         'Connected': 'Verbonden',
@@ -317,7 +337,11 @@ const TRANSLATIONS = {
         'Consent to send error reports': 'Toestemming om foutrapporten te verzenden',
         'Log Level': 'Logniveau',
         'Log verbosity level': 'Log verbositeitsniveau',
-        'Select log level': 'Selecteer logniveau'
+        'Select log level': 'Selecteer logniveau',
+        'Refresh Configuration': 'Configuratie vernieuwen',
+        'Reload settings from Twingate': 'Instellingen opnieuw laden van Twingate',
+        'Refresh': 'Vernieuwen'
+
     }
 };
 
@@ -369,19 +393,23 @@ export class Translator {
             { code: 'nl', name: 'Nederlands' }
         ];
     }
-}export function _(text) {
-    if (!global._twingateTranslator) {
-        global._twingateTranslator = new Translator(null);
+}
+
+let _translator = null;
+
+export function _(text) {
+    if (!_translator) {
+        _translator = new Translator(null);
     }
-    return global._twingateTranslator.gettext(text);
+    return _translator.gettext(text);
 }
 
 export function setTranslatorSettings(settings) {
-    global._twingateTranslator = new Translator(settings);
+    _translator = new Translator(settings);
 }
 
 export function updateTranslatorLocale(locale) {
-    if (global._twingateTranslator) {
-        global._twingateTranslator.setLocale(locale);
+    if (_translator) {
+        _translator.setLocale(locale);
     }
 }

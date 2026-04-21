@@ -1,6 +1,5 @@
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
-import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -250,12 +249,12 @@ export default class TwingatePreferences extends ExtensionPreferences {
         page.add(refreshGroup);
 
         const refreshRow = new Adw.ActionRow({
-            title: 'Actualiser la configuration',
-            subtitle: 'Recharger les paramètres depuis Twingate'
+            title: this._.gettext('Refresh Configuration'),
+            subtitle: this._.gettext('Reload settings from Twingate')
         });
 
         const refreshButton = new Gtk.Button({
-            label: 'Actualiser',
+            label: this._.gettext('Refresh'),
             valign: Gtk.Align.CENTER
         });
         refreshButton.add_css_class('suggested-action');
@@ -270,69 +269,43 @@ export default class TwingatePreferences extends ExtensionPreferences {
     }
 
     _loadTwingateConfig() {
-        log('Twingate Prefs: [DEBUG] _loadTwingateConfig called');
-
         try {
-            // Utiliser pkexec pour obtenir les privilèges root
-            log('Twingate Prefs: [DEBUG] Using pkexec to run: twingate config');
-            const [success, stdout, stderr] = GLib.spawn_command_line_sync('pkexec twingate config');
+            const proc = Gio.Subprocess.new(
+                ['pkexec', 'twingate', 'config'],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            );
+            const [, stdout, stderr] = proc.communicate_utf8(null, null);
 
-            log(`Twingate Prefs: [DEBUG] pkexec attempt - success: ${success}`);
-            log(`Twingate Prefs: [DEBUG] stdout length: ${stdout ? stdout.length : 0}`);
-            log(`Twingate Prefs: [DEBUG] stderr length: ${stderr ? stderr.length : 0}`);
-
-            if (!success || !stdout) {
-                const errorMsg = stderr ? new TextDecoder().decode(stderr) : 'Unknown error';
-                log(`Twingate Prefs: [ERROR] pkexec failed. Error: ${errorMsg}`);
+            if (!proc.get_successful() || !stdout) {
+                const errorMsg = (stderr || 'Unknown error').trim();
+                log(`Twingate Prefs: [ERROR] pkexec twingate config failed: ${errorMsg}`);
                 return null;
             }
 
-            const output = new TextDecoder().decode(stdout);
-            log(`Twingate Prefs: [DEBUG] Raw output:\n${output}`);
-
-            const lines = output.split('\n');
-            log(`Twingate Prefs: [DEBUG] Number of lines: ${lines.length}`);
-
             const config = {};
-
-            for (const line of lines) {
+            for (const line of stdout.split('\n')) {
                 const trimmed = line.trim();
-                log(`Twingate Prefs: [DEBUG] Processing line: "${trimmed}"`);
-
                 if (trimmed && trimmed.includes(':')) {
                     const [key, ...valueParts] = trimmed.split(':');
-                    const value = valueParts.join(':').trim();
-
-                    config[key.trim()] = value;
-                    log(`Twingate Prefs: [DEBUG] Parsed: ${key.trim()} = ${value}`);
+                    config[key.trim()] = valueParts.join(':').trim();
                 }
             }
 
-            log(`Twingate Prefs: [DEBUG] Final config object: ${JSON.stringify(config)}`);
-            log(`Twingate Prefs: [DEBUG] Config keys: ${Object.keys(config).join(', ')}`);
-
             return config;
         } catch (e) {
-            log(`Twingate Prefs: [EXCEPTION] Error loading Twingate config: ${e}`);
-            log(`Twingate Prefs: [EXCEPTION] Stack: ${e.stack}`);
+            log(`Twingate Prefs: [ERROR] Error loading Twingate config: ${e}`);
             return null;
         }
     }
 
     _setTwingateConfig(key, value) {
-        log(`Twingate Prefs: [DEBUG] _setTwingateConfig called with key=${key}, value=${value}`);
-
         try {
-            // Utiliser pkexec pour exécuter la commande avec les privilèges root
-            const command = `pkexec twingate config ${key} ${value}`;
-            log(`Twingate Prefs: [DEBUG] Executing command: ${command}`);
-
-            GLib.spawn_command_line_async(command);
-
-            log(`Twingate Prefs: [INFO] Twingate config updated: ${key} = ${value}`);
+            Gio.Subprocess.new(
+                ['pkexec', 'twingate', 'config', key, value],
+                Gio.SubprocessFlags.NONE
+            );
         } catch (e) {
             log(`Twingate Prefs: [ERROR] Error setting Twingate config: ${e}`);
-            log(`Twingate Prefs: [ERROR] Stack: ${e.stack}`);
         }
     }
 }

@@ -27,6 +27,19 @@
     font-size: 12pt;
     padding: 8px 12px;
     min-width: 200px;
+    font-weight: bold;
+}
+
+.twingate-status-online {
+    color: #4ade80;
+}
+
+.twingate-status-authenticating {
+    color: #fbbf24;
+}
+
+.twingate-status-offline {
+    color: #ef4444;
 }
 
 /* Style du label de version */
@@ -59,12 +72,12 @@
     padding: 4px;
 }
 
-/* Item de ressource */
+/* Item de ressource — état par défaut */
 .twingate-resource-item {
-    padding: 10px 14px;
+    padding: 8px 12px;
     margin: 4px 0;
     background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    border-radius: 6px;
     border-left: 3px solid #4ade80;
     transition: background-color 0.2s ease;
 }
@@ -73,43 +86,53 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Authentifié */
+.twingate-resource-item-auth {
+    border-left-color: #4ade80;
+}
+
+/* En attente */
+.twingate-resource-item-pending {
+    border-left-color: #fbbf24;
+}
+
+/* Non authentifié */
+.twingate-resource-item-noauth {
+    border-left-color: #6b7280;
+}
+
+/* Labels du statut d'auth */
+.twingate-resource-auth-ok {
+    font-size: 8pt;
+    color: #4ade80;
+    padding-left: 24px;
+    margin-top: 2px;
+}
+
+.twingate-resource-auth-pending {
+    font-size: 8pt;
+    color: #fbbf24;
+    padding-left: 24px;
+    margin-top: 2px;
+}
+
+.twingate-resource-auth-none {
+    font-size: 8pt;
+    color: #6b7280;
+    padding-left: 24px;
+    margin-top: 2px;
+}
+
 /* Box du nom avec icône */
 .twingate-resource-name-box {
-    margin-bottom: 4px;
-}
-
-/* Icône de la ressource */
-.twingate-resource-icon {
-    font-size: 11pt;
-    color: #4ade80;
-}
-
-/* Container scrollable des ressources */
-.twingate-resources-scroll {
-    max-height: 300px;
-    min-width: 280px;
-}
-
-.twingate-resources-container {
-    padding: 4px;
-}
-
-/* Box pour chaque ressource */
-.twingate-resource-item {
-    padding: 8px 12px;
-    margin: 4px 0;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-}
-
-/* Box pour le nom avec icône */
-.twingate-resource-name-box {
     spacing: 6px;
+    margin-bottom: 4px;
 }
 
 /* Icône de ressource */
 .twingate-resource-icon {
     font-size: 12pt;
+    color: #4ade80;
 }
 
 /* Nom de la ressource */
@@ -128,19 +151,21 @@
     padding-left: 24px;
 }
 
-/* Message vide/erreur */
-.twingate-resource-empty,
-.twingate-resource-error {
-    padding: 12px;
+/* Message vide */
+.twingate-resource-empty {
+    text-align: center;
+    padding: 20px;
+    font-size: 9.5pt;
     font-style: italic;
+    color: #9ca3af;
 }
 
-/* Messages vides et erreurs */
-.twingate-resource-empty,
+/* Message d'erreur */
 .twingate-resource-error {
     text-align: center;
     padding: 20px;
     font-size: 9.5pt;
+    color: #ef4444;
 }
 
 /* Animation au survol du menu */
