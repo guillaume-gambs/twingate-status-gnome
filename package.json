@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "main": "extension.js",
   "dependencies": {
-    "@girs/gjs": "^4.0.0-beta.16",
-    "@girs/gnome-shell": "^46.0.2"
+    "@girs/gjs": "4.0.0-rc.3",
+    "@girs/gnome-shell": "^49.0.0"
   },
   "author": "guillaume-gambs",
   "license": "GPL-3.0-or-later",
   "description": "GNOME Shell extension showing Twingate connection status",
   "devDependencies": {
-    "@eslint/js": "^9.11.0",
-    "eslint": "^9.11.0",
-    "globals": "^15.9.0"
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0",
+    "globals": "^17.0.0"
+  },
+  "overrides": {
+    "@girs/mtk-17": "17.0.0-4.0.0-rc.3",
+    "@girs/gjs": "4.0.0-rc.3"
   }
 }
