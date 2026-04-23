@@ -259,9 +259,16 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
         refreshButton.add_css_class('suggested-action');
         refreshButton.connect('clicked', () => {
-            // Recharger la fenêtre de préférences
-            window.close();
-            this.fillPreferencesWindow(window);
+            // Ouvrir les préférences via l'extension (recrée la fenêtre)
+            try {
+                const app = window.get_application();
+                if (app) {
+                    window.close();
+                    app.activate();
+                }
+            } catch (e) {
+                log(`Twingate Prefs: [ERROR] Error refreshing: ${e}`);
+            }
         });
 
         refreshRow.add_suffix(refreshButton);

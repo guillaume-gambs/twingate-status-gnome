@@ -407,9 +407,3 @@ export function _(text) {
 export function setTranslatorSettings(settings) {
     _translator = new Translator(settings);
 }
-
-export function updateTranslatorLocale(locale) {
-    if (_translator) {
-        _translator.setLocale(locale);
-    }
-}

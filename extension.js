@@ -403,20 +403,23 @@ const TwingateIndicator = GObject.registerClass(
             // Planifier la prochaine mise à jour
             if (this._resourceUpdateTimeout) {
                 GLib.Source.remove(this._resourceUpdateTimeout);
+                this._resourceUpdateTimeout = null;
             }
             this._resourceUpdateTimeout = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 this._resourceRefreshInterval,
                 () => {
+                    this._resourceUpdateTimeout = null;
                     if (this._status === 'online') {
                         this._updateResourcesList();
                     }
-                    return GLib.SOURCE_CONTINUE;
+                    return GLib.SOURCE_REMOVE;
                 }
             );
         }
 
         _addStatusWatch(pollInterval, onChange) {
+            this._removeStatusWatch();
             this._pollerTimeoutHandle = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 pollInterval,
