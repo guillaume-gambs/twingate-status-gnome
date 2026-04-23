@@ -7,7 +7,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-EXTENSION_DIR=~/.local/share/gnome-shell/extensions/twingate-status@eudes.es
+EXTENSION_DIR=~/.local/share/gnome-shell/extensions/twingate-status@guillaume-gambs.github.io
 
 echo -e "${YELLOW}Installing Twingate Status extension...${NC}\n"
 
@@ -78,7 +78,7 @@ else
 fi
 echo ""
 echo "2. Enable the extension:"
-echo -e "   ${GREEN}gnome-extensions enable twingate-status@eudes.es${NC}"
+echo -e "   ${GREEN}gnome-extensions enable twingate-status@guillaume-gambs.github.io${NC}"
 echo ""
 echo "3. Check logs if needed:"
 echo -e "   ${GREEN}journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate${NC}"

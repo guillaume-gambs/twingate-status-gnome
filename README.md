@@ -78,7 +78,7 @@ pkexec twingate config autostart true
 3. Restart GNOME Shell (Alt+F2, type 'r', press Enter on X11 or logout/login on Wayland)
 4. Enable the extension using GNOME Extensions app or:
    ```bash
-   gnome-extensions enable twingate-status@eudes.es
+   gnome-extensions enable twingate-status@guillaume-gambs.github.io
    ```
 
 ## Configuration
@@ -134,7 +134,7 @@ journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate
 ### Extension not loading
 1. Check that GNOME Shell version is 46-50
 2. Ensure Twingate is installed: `which twingate`
-3. Verify schema compilation: `ls ~/.local/share/gnome-shell/extensions/twingate-status@eudes.es/schemas/gschemas.compiled`
+3. Verify schema compilation: `ls ~/.local/share/gnome-shell/extensions/twingate-status@guillaume-gambs.github.io/schemas/gschemas.compiled`
 4. Check logs: `journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate`
 
 ### Settings not loading
@@ -150,9 +150,9 @@ pkexec twingate config
 
 ## License
 
-LGPL-3.0-or-later
+GPL-3.0-or-later
 
 ## Credits
 
-Original extension by [eudes](https://github.com/eudes)
-Enhanced with multi-state support, i18n (7 languages), settings panel, and resource list
+Originally created by [eudes](https://github.com/eudes/twingate-status-gnome).
+Forked and enhanced by [guillaume-gambs](https://github.com/guillaume-gambs/twingate-status-gnome) with: multi-state indicator, i18n (7 languages), settings panel, resource list with auth status, GNOME 50 support, and security fixes.

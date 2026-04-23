@@ -157,7 +157,7 @@ const TwingateIndicator = GObject.registerClass(
         openPreferences() {
             // Ouvrir les préférences de l'extension
             try {
-                const extension = Extension.lookupByUUID('twingate-status@eudes.es');
+                const extension = Extension.lookupByUUID('twingate-status@guillaume-gambs.github.io');
                 if (extension && extension.openPreferences) {
                     extension.openPreferences();
                 }

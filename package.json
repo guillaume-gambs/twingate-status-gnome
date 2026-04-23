@@ -6,9 +6,9 @@
     "@girs/gjs": "^4.0.0-beta.16",
     "@girs/gnome-shell": "^46.0.2"
   },
-  "author": "",
-  "license": "LGPL-3.0-or-later",
-  "description": "",
+  "author": "guillaume-gambs",
+  "license": "GPL-3.0-or-later",
+  "description": "GNOME Shell extension showing Twingate connection status",
   "devDependencies": {
     "@eslint/js": "^9.11.0",
     "eslint": "^9.11.0",
