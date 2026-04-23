@@ -18,10 +18,7 @@ jobs:
 
       - name: Create zip
         run: |
-          # Compile schemas before zip creation
-          mkdir -p schemas
-          glib-compile-schemas schemas/ || echo "Warning: Could not compile schemas"
-          zip -r twingate-status@guillaume-gambs.github.io.zip icons/ schemas/ extension.js prefs.js locale.js metadata.json stylesheet.css LICENSE
+          zip -r twingate-status@guillaume-gambs.github.io.zip icons/ schemas/org.gnome.shell.extensions.twingate-status.gschema.xml extension.js prefs.js locale.js metadata.json stylesheet.css LICENSE
 
       - name: Upload package
         uses: svenstaro/upload-release-action@v2

@@ -19,23 +19,23 @@ export default class TwingatePreferences extends ExtensionPreferences {
         log('Twingate Prefs: [DEBUG] Settings object retrieved');
 
         // Initialiser le système de traduction
-        this._ = new Translator(settings);
+        const t = new Translator(settings);
 
         // Groupe des paramètres de l'extension
         const extensionGroup = new Adw.PreferencesGroup({
-            title: this._.gettext('Extension Settings'),
-            description: this._.gettext('Interface and behavior configuration')
+            title: t.gettext('Extension Settings'),
+            description: t.gettext('Interface and behavior configuration')
         });
         page.add(extensionGroup);
 
         // Langue
         const languageRow = new Adw.ComboRow({
-            title: this._.gettext('Language'),
-            subtitle: this._.gettext('Interface language')
+            title: t.gettext('Language'),
+            subtitle: t.gettext('Interface language')
         });
 
         const languages = new Gtk.StringList();
-        const availableLanguages = this._.getAvailableLanguages();
+        const availableLanguages = t.getAvailableLanguages();
         const langCodes = availableLanguages.map(lang => lang.code);
         const langNames = availableLanguages.map(lang => lang.name);
 
@@ -62,8 +62,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Intervalle de rafraîchissement des ressources
         const refreshIntervalRow = new Adw.ActionRow({
-            title: this._.gettext('Resource Refresh Interval'),
-            subtitle: this._.gettext('Time between each list update (in seconds)')
+            title: t.gettext('Resource Refresh Interval'),
+            subtitle: t.gettext('Time between each list update (in seconds)')
         });
 
         const currentInterval = settings.get_int('resource-refresh-interval');
@@ -91,15 +91,15 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Note d'information
         const noteRow = new Adw.ActionRow({
-            title: this._.gettext('ℹ️ Note'),
-            subtitle: this._.gettext('Restart GNOME Shell to apply language changes\n(Alt+F2, type \'r\' on X11 or logout/login on Wayland)')
+            title: t.gettext('ℹ️ Note'),
+            subtitle: t.gettext('Restart GNOME Shell to apply language changes\n(Alt+F2, type \'r\' on X11 or logout/login on Wayland)')
         });
         extensionGroup.add(noteRow);
 
         // Groupe d'informations Twingate
         const infoGroup = new Adw.PreferencesGroup({
-            title: this._.gettext('Twingate Configuration'),
-            description: this._.gettext('Twingate configuration management')
+            title: t.gettext('Twingate Configuration'),
+            description: t.gettext('Twingate configuration management')
         });
         page.add(infoGroup);
 
@@ -110,8 +110,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         if (!config) {
             log('Twingate Prefs: [ERROR] Failed to load Twingate configuration');
             const errorRow = new Adw.ActionRow({
-                title: this._.gettext('Error'),
-                subtitle: this._.gettext('Unable to load Twingate configuration.\nMake sure Twingate is installed.\nTry: sudo twingate config')
+                title: t.gettext('Error'),
+                subtitle: t.gettext('Unable to load Twingate configuration.\nMake sure Twingate is installed.\nTry: sudo twingate config')
             });
             infoGroup.add(errorRow);
             return;
@@ -120,29 +120,29 @@ export default class TwingatePreferences extends ExtensionPreferences {
         log(`Twingate Prefs: [DEBUG] Configuration loaded successfully with ${Object.keys(config).length} keys`);
 
         // Network
-        const networkValue = config.network || this._.gettext('Not configured');
+        const networkValue = config.network || t.gettext('Not configured');
         log(`Twingate Prefs: [DEBUG] Network: ${networkValue}`);
 
         const networkRow = new Adw.ActionRow({
-            title: this._.gettext('Network'),
+            title: t.gettext('Network'),
             subtitle: networkValue
         });
         infoGroup.add(networkRow);
 
         // Controller URL
-        const controllerValue = config['controller-url'] || this._.gettext('Not configured');
+        const controllerValue = config['controller-url'] || t.gettext('Not configured');
         log(`Twingate Prefs: [DEBUG] Controller URL: ${controllerValue}`);
 
         const controllerRow = new Adw.ActionRow({
-            title: this._.gettext('Controller URL'),
+            title: t.gettext('Controller URL'),
             subtitle: controllerValue
         });
         infoGroup.add(controllerRow);
 
         // Groupe des paramètres modifiables
         const settingsGroup = new Adw.PreferencesGroup({
-            title: this._.gettext('Parameters'),
-            description: this._.gettext('Twingate behavior configuration')
+            title: t.gettext('Parameters'),
+            description: t.gettext('Twingate behavior configuration')
         });
         page.add(settingsGroup);
 
@@ -151,8 +151,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         log(`Twingate Prefs: [DEBUG] Autostart current value: ${autostartValue}`);
 
         const autostartRow = new Adw.ActionRow({
-            title: this._.gettext('Autostart'),
-            subtitle: this._.gettext('Start Twingate automatically at startup')
+            title: t.gettext('Autostart'),
+            subtitle: t.gettext('Start Twingate automatically at startup')
         });
         const autostartSwitch = new Gtk.Switch({
             active: autostartValue === 'true',
@@ -172,8 +172,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         log(`Twingate Prefs: [DEBUG] Save Auth Data current value: ${saveAuthValue}`);
 
         const saveAuthRow = new Adw.ActionRow({
-            title: this._.gettext('Save Auth Data'),
-            subtitle: this._.gettext('Save authentication data')
+            title: t.gettext('Save Auth Data'),
+            subtitle: t.gettext('Save authentication data')
         });
         const saveAuthSwitch = new Gtk.Switch({
             active: saveAuthValue === 'true',
@@ -193,8 +193,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         log(`Twingate Prefs: [DEBUG] Sentry User Consent current value: ${sentryValue}`);
 
         const sentryRow = new Adw.ActionRow({
-            title: this._.gettext('Sentry User Consent'),
-            subtitle: this._.gettext('Consent to send error reports')
+            title: t.gettext('Sentry User Consent'),
+            subtitle: t.gettext('Consent to send error reports')
         });
         const sentrySwitch = new Gtk.Switch({
             active: sentryValue === 'true',
@@ -211,14 +211,14 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Log Level
         const logLevelGroup = new Adw.PreferencesGroup({
-            title: this._.gettext('Log Level'),
-            description: this._.gettext('Log verbosity level')
+            title: t.gettext('Log Level'),
+            description: t.gettext('Log verbosity level')
         });
         page.add(logLevelGroup);
 
         const logLevelRow = new Adw.ComboRow({
-            title: this._.gettext('Log Level'),
-            subtitle: this._.gettext('Select log level')
+            title: t.gettext('Log Level'),
+            subtitle: t.gettext('Select log level')
         });
 
         const logLevels = new Gtk.StringList();
@@ -249,12 +249,12 @@ export default class TwingatePreferences extends ExtensionPreferences {
         page.add(refreshGroup);
 
         const refreshRow = new Adw.ActionRow({
-            title: this._.gettext('Refresh Configuration'),
-            subtitle: this._.gettext('Reload settings from Twingate')
+            title: t.gettext('Refresh Configuration'),
+            subtitle: t.gettext('Reload settings from Twingate')
         });
 
         const refreshButton = new Gtk.Button({
-            label: this._.gettext('Refresh'),
+            label: t.gettext('Refresh'),
             valign: Gtk.Align.CENTER
         });
         refreshButton.add_css_class('suggested-action');

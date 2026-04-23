@@ -18,7 +18,7 @@ export default class TwingateStatusIndicatorExtension extends Extension {
         // Configurer le traducteur avec les settings
         setTranslatorSettings(this._settings);
 
-        this._indicator = new TwingateIndicator(this._settings);
+        this._indicator = new TwingateIndicator(this._settings, this);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
@@ -34,9 +34,10 @@ export default class TwingateStatusIndicatorExtension extends Extension {
 
 const TwingateIndicator = GObject.registerClass(
     class TwingateIndicator extends PanelMenu.Button {
-        constructor(settings) {
+        constructor(settings, extension) {
             super(0.0, 'Twingate Status Indicator');
 
+            this._extension = extension;
             this._settings = settings;
             this._iconNameOnline = 'twingate_on';
             this._iconNameAuthenticating = 'twingate_authenticating';
@@ -157,10 +158,7 @@ const TwingateIndicator = GObject.registerClass(
         openPreferences() {
             // Ouvrir les préférences de l'extension
             try {
-                const extension = Extension.lookupByUUID('twingate-status@guillaume-gambs.github.io');
-                if (extension && extension.openPreferences) {
-                    extension.openPreferences();
-                }
+                this._extension.openPreferences();
             } catch (e) {
                 log(`Error opening preferences: ${e}`);
             }
