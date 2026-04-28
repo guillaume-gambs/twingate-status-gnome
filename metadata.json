@@ -1,15 +1,8 @@
 {
-  "name": "Twingate Status",
-  "description": "Displays Twingate connection status in the top bar with available resources list. Click to start/stop connection. Supports multiple languages and connection states (online, authenticating, offline). Configurable preferences with enhanced display and scrolling.",
   "uuid": "twingate-status@guillaume-gambs.github.io",
-  "shell-version": [
-    "46",
-    "47",
-    "48",
-    "49",
-    "50"
-  ],
+  "name": "Twingate Status",
+  "description": "Displays Twingate VPN connection status in the GNOME Shell top bar.\nShows available resources, authentication state, and allows starting/stopping the connection.\nSupports English, French, Spanish, German, Italian, and Portuguese.",
+  "shell-version": [ "46", "47", "48", "49", "50" ],
   "url": "https://github.com/guillaume-gambs/twingate-status-gnome",
-  "version": 1,
   "settings-schema": "org.gnome.shell.extensions.twingate-status"
 }

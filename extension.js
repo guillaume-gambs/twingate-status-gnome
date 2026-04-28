@@ -15,7 +15,6 @@ export default class TwingateStatusIndicatorExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
 
-        // Configurer le traducteur avec les settings
         setTranslatorSettings(this._settings);
 
         this._indicator = new TwingateIndicator(this._settings, this);
@@ -45,31 +44,24 @@ const TwingateIndicator = GObject.registerClass(
             this._fastPollInterval = 1000;
             this._slowPollInterval = 10000;
 
-            // Lire l'intervalle depuis les settings (en secondes, converti en ms)
             this._resourceRefreshInterval = this._settings.get_int('resource-refresh-interval') * 1000;
 
-            // Écouter les changements de l'intervalle
             this._settingsChangedId = this._settings.connect('changed::resource-refresh-interval', () => {
                 this._resourceRefreshInterval = this._settings.get_int('resource-refresh-interval') * 1000;
-                // Redémarrer le timer avec le nouveau délai
                 if (this._status === 'online') {
                     this._updateResourcesList();
                 }
             });
 
-            // États possibles : 'online', 'authenticating', 'not-running'
             this._status = 'not-running';
-            this._resources = [];
             this._version = this._getTwingateVersion();
 
-            // Icône dans le panneau
             this.icon = new St.Icon({
                 style_class: this._iconNameOffline,
                 y_align: Clutter.ActorAlign.CENTER
             });
             this.add_child(this.icon);
 
-            // Section statut
             this._statusSection = new PopupMenu.PopupMenuSection();
             this.menu.addMenuItem(this._statusSection);
 
@@ -85,7 +77,6 @@ const TwingateIndicator = GObject.registerClass(
             this._statusItem.add_child(this._statusLabel);
             this._statusSection.addMenuItem(this._statusItem);
 
-            // Version Twingate
             if (this._version) {
                 this._versionLabel = new St.Label({
                     text: `${_('Version')}: ${this._version}`,
@@ -100,19 +91,16 @@ const TwingateIndicator = GObject.registerClass(
                 this._statusSection.addMenuItem(this._versionItem);
             }
 
-            // Bouton d'action
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
             this._actionItem = new PopupMenu.PopupMenuItem(_('Connect'));
             this._actionItem.connect('activate', () => this._handleAction());
             this.menu.addMenuItem(this._actionItem);
 
-            // Bouton Paramètres
             this._settingsItem = new PopupMenu.PopupMenuItem(_('Settings'));
             this._settingsItem.connect('activate', () => this.openPreferences());
             this.menu.addMenuItem(this._settingsItem);
 
-            // Section ressources
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
             this._resourcesSection = new PopupMenu.PopupMenuSection();
@@ -125,7 +113,6 @@ const TwingateIndicator = GObject.registerClass(
             this._resourcesLabel.label.style_class = 'twingate-resources-title';
             this._resourcesSection.addMenuItem(this._resourcesLabel);
 
-            // Créer un conteneur scrollable pour les ressources
             this._resourcesScrollSection = new PopupMenu.PopupMenuSection();
             this.menu.addMenuItem(this._resourcesScrollSection);
 
@@ -149,14 +136,12 @@ const TwingateIndicator = GObject.registerClass(
             scrollItem.add_child(this._resourcesScrollView);
             this._resourcesScrollSection.addMenuItem(scrollItem);
 
-            // Démarrage
             this._updateStatus();
             this._addStatusWatch(this._slowPollInterval);
             this._updateResourcesList();
         }
 
         openPreferences() {
-            // Ouvrir les préférences de l'extension
             try {
                 this._extension.openPreferences();
             } catch (e) {
@@ -234,6 +219,8 @@ const TwingateIndicator = GObject.registerClass(
                 this._updateResourcesList();
             });
 
+            // pkexec is required because twingate service-start/stop need root privileges.
+            // twingate is a system binary installed via package manager, not user-writable.
             try {
                 if (this._status === 'online' || this._status === 'authenticating') {
                     Gio.Subprocess.new(['pkexec', 'twingate', 'service-stop'], Gio.SubprocessFlags.NONE);
@@ -243,15 +230,11 @@ const TwingateIndicator = GObject.registerClass(
                     Gio.Subprocess.new(['twingate', 'desktop-start'], Gio.SubprocessFlags.NONE);
                 }
             } catch (e) {
-                log(`Twingate: [ERROR] Failed to control twingate service: ${e}`);
+                log(`Twingate: Failed to control service: ${e}`);
             }
         }
 
         _updateResourcesList() {
-            log('Twingate: [DEBUG] _updateResourcesList called');
-            log(`Twingate: [DEBUG] Current status: ${this._status}`);
-
-            // Nettoyer les ressources existantes
             this._resourcesBox.destroy_all_children();
 
             if (this._status !== 'online') {
@@ -263,8 +246,6 @@ const TwingateIndicator = GObject.registerClass(
                 return;
             }
 
-            log('Twingate: [DEBUG] Executing twingate resources command...');
-
             try {
                 const proc = Gio.Subprocess.new(
                     ['twingate', 'resources'],
@@ -273,16 +254,9 @@ const TwingateIndicator = GObject.registerClass(
                 const [, stdout, stderr] = proc.communicate_utf8(null, null);
 
                 if (proc.get_successful() && stdout) {
-                    const output = stdout;
-                    log(`Twingate: [DEBUG] Output: ${output}`);
-
-                    const lines = output.split('\n').filter(line => line.trim());
-                    log(`Twingate: [DEBUG] Number of lines: ${lines.length}`);
+                    const lines = stdout.split('\n').filter(line => line.trim());
 
                     if (lines.length > 1) {
-                        log('Twingate: [DEBUG] Processing resources...');
-
-                        // Déterminer les positions de colonnes depuis l'en-tête
                         const header = lines[0];
                         const colAddress = header.indexOf('ADDRESS');
                         const colAlias = header.indexOf('ALIAS');
@@ -292,9 +266,6 @@ const TwingateIndicator = GObject.registerClass(
                             const line = lines[i];
                             if (!line.trim()) continue;
 
-                            log(`Twingate: [DEBUG] Line ${i}: ${line}`);
-
-                            // Parser par position de colonnes si disponibles, sinon fallback sur split
                             let name, address, authStatus;
                             if (colAddress > 0 && colAlias > 0 && colAuth > 0 && line.length > colAddress) {
                                 name = line.substring(0, colAddress).trim();
@@ -306,8 +277,6 @@ const TwingateIndicator = GObject.registerClass(
                                 address = (parts[1] || '').trim();
                                 authStatus = (parts[3] || '').trim();
                             }
-
-                            log(`Twingate: [DEBUG] name=${name} address=${address} auth=${authStatus}`);
 
                             if (name) {
                                 const isAuthenticated = authStatus.toLowerCase().includes('auth expires');
@@ -326,7 +295,6 @@ const TwingateIndicator = GObject.registerClass(
                                     style_class: itemClass
                                 });
 
-                                // Nom de la ressource avec icône + badge auth
                                 const nameBox = new St.BoxLayout({
                                     style_class: 'twingate-resource-name-box'
                                 });
@@ -344,7 +312,6 @@ const TwingateIndicator = GObject.registerClass(
                                 nameBox.add_child(nameLabel);
                                 resourceBox.add_child(nameBox);
 
-                                // Adresse de la ressource (si disponible)
                                 if (address) {
                                     const addressLabel = new St.Label({
                                         text: address,
@@ -353,7 +320,6 @@ const TwingateIndicator = GObject.registerClass(
                                     resourceBox.add_child(addressLabel);
                                 }
 
-                                // Statut d'authentification (si présent)
                                 if (authStatus) {
                                     const authLabel = new St.Label({
                                         text: authStatus,
@@ -369,9 +335,7 @@ const TwingateIndicator = GObject.registerClass(
                                 this._resourcesBox.add_child(resourceBox);
                             }
                         }
-                        log('Twingate: [DEBUG] Resources processed successfully');
                     } else {
-                        log('Twingate: [DEBUG] No resources found (only header line)');
                         const noResourceLabel = new St.Label({
                             text: _('No resources available'),
                             style_class: 'twingate-resource-empty'
@@ -380,7 +344,7 @@ const TwingateIndicator = GObject.registerClass(
                     }
                 } else {
                     const errorMsg = (stderr || 'Command failed').trim();
-                    log(`Twingate: [ERROR] resources command failed: ${errorMsg}`);
+                    log(`Twingate: Resources command failed: ${errorMsg}`);
 
                     const errorLabel = new St.Label({
                         text: `${_('Loading error')}: ${errorMsg}`,
@@ -389,7 +353,7 @@ const TwingateIndicator = GObject.registerClass(
                     this._resourcesBox.add_child(errorLabel);
                 }
             } catch (e) {
-                log(`Twingate: [EXCEPTION] in _updateResourcesList: ${e}`);
+                log(`Twingate: Error loading resources: ${e}`);
 
                 const errorLabel = new St.Label({
                     text: `${_('Loading error')}: ${e.message}`,
@@ -398,7 +362,6 @@ const TwingateIndicator = GObject.registerClass(
                 this._resourcesBox.add_child(errorLabel);
             }
 
-            // Planifier la prochaine mise à jour
             if (this._resourceUpdateTimeout) {
                 GLib.Source.remove(this._resourceUpdateTimeout);
                 this._resourceUpdateTimeout = null;

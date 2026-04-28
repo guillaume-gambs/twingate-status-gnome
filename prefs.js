@@ -7,18 +7,14 @@ import { Translator } from './locale.js';
 
 export default class TwingatePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        log('Twingate Prefs: [DEBUG] fillPreferencesWindow called');
 
-        // Définir la taille de la fenêtre
         window.set_default_size(640, 1000);
 
         const page = new Adw.PreferencesPage();
         window.add(page);
 
         const settings = this.getSettings();
-        log('Twingate Prefs: [DEBUG] Settings object retrieved');
 
-        // Initialiser le système de traduction
         const t = new Translator(settings);
 
         // Groupe des paramètres de l'extension
@@ -44,7 +40,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         languageRow.set_model(languages);
 
         const currentLang = settings.get_string('language');
-        log(`Twingate Prefs: [DEBUG] Current language setting: ${currentLang}`);
 
         const currentLangIndex = langCodes.indexOf(currentLang);
         if (currentLangIndex >= 0) {
@@ -67,7 +62,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
 
         const currentInterval = settings.get_int('resource-refresh-interval');
-        log(`Twingate Prefs: [DEBUG] Current refresh interval: ${currentInterval} seconds`);
 
         const refreshIntervalSpinButton = new Gtk.SpinButton({
             adjustment: new Gtk.Adjustment({
@@ -82,14 +76,12 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         refreshIntervalSpinButton.connect('value-changed', (widget) => {
             const newValue = widget.get_value();
-            log(`Twingate Prefs: [DEBUG] Refresh interval changed to: ${newValue} seconds`);
             settings.set_int('resource-refresh-interval', newValue);
         });
 
         refreshIntervalRow.add_suffix(refreshIntervalSpinButton);
         extensionGroup.add(refreshIntervalRow);
 
-        // Note d'information
         const noteRow = new Adw.ActionRow({
             title: t.gettext('ℹ️ Note'),
             subtitle: t.gettext('Restart GNOME Shell to apply language changes\n(Alt+F2, type \'r\' on X11 or logout/login on Wayland)')
@@ -103,12 +95,10 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
         page.add(infoGroup);
 
-        // Charger la configuration
-        log('Twingate Prefs: [DEBUG] Loading Twingate configuration...');
         const config = this._loadTwingateConfig();
 
         if (!config) {
-            log('Twingate Prefs: [ERROR] Failed to load Twingate configuration');
+            log('Twingate Prefs: Failed to load configuration');
             const errorRow = new Adw.ActionRow({
                 title: t.gettext('Error'),
                 subtitle: t.gettext('Unable to load Twingate configuration.\nMake sure Twingate is installed.\nTry: sudo twingate config')
@@ -117,11 +107,9 @@ export default class TwingatePreferences extends ExtensionPreferences {
             return;
         }
 
-        log(`Twingate Prefs: [DEBUG] Configuration loaded successfully with ${Object.keys(config).length} keys`);
 
         // Network
         const networkValue = config.network || t.gettext('Not configured');
-        log(`Twingate Prefs: [DEBUG] Network: ${networkValue}`);
 
         const networkRow = new Adw.ActionRow({
             title: t.gettext('Network'),
@@ -131,7 +119,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Controller URL
         const controllerValue = config['controller-url'] || t.gettext('Not configured');
-        log(`Twingate Prefs: [DEBUG] Controller URL: ${controllerValue}`);
 
         const controllerRow = new Adw.ActionRow({
             title: t.gettext('Controller URL'),
@@ -148,7 +135,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Autostart
         const autostartValue = config.autostart || 'false';
-        log(`Twingate Prefs: [DEBUG] Autostart current value: ${autostartValue}`);
 
         const autostartRow = new Adw.ActionRow({
             title: t.gettext('Autostart'),
@@ -160,7 +146,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
         autostartSwitch.connect('notify::active', (widget) => {
             const newValue = widget.active ? 'true' : 'false';
-            log(`Twingate Prefs: [DEBUG] Changing autostart from ${autostartValue} to ${newValue}`);
             this._setTwingateConfig('autostart', newValue);
         });
         autostartRow.add_suffix(autostartSwitch);
@@ -169,7 +154,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Save Auth Data
         const saveAuthValue = config['save-auth-data'] || 'false';
-        log(`Twingate Prefs: [DEBUG] Save Auth Data current value: ${saveAuthValue}`);
 
         const saveAuthRow = new Adw.ActionRow({
             title: t.gettext('Save Auth Data'),
@@ -181,7 +165,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
         saveAuthSwitch.connect('notify::active', (widget) => {
             const newValue = widget.active ? 'true' : 'false';
-            log(`Twingate Prefs: [DEBUG] Changing save-auth-data from ${saveAuthValue} to ${newValue}`);
             this._setTwingateConfig('save-auth-data', newValue);
         });
         saveAuthRow.add_suffix(saveAuthSwitch);
@@ -190,7 +173,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Sentry User Consent
         const sentryValue = config['sentry-user-consent'] || 'false';
-        log(`Twingate Prefs: [DEBUG] Sentry User Consent current value: ${sentryValue}`);
 
         const sentryRow = new Adw.ActionRow({
             title: t.gettext('Sentry User Consent'),
@@ -202,7 +184,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         });
         sentrySwitch.connect('notify::active', (widget) => {
             const newValue = widget.active ? 'true' : 'false';
-            log(`Twingate Prefs: [DEBUG] Changing sentry-user-consent from ${sentryValue} to ${newValue}`);
             this._setTwingateConfig('sentry-user-consent', newValue);
         });
         sentryRow.add_suffix(sentrySwitch);
@@ -229,7 +210,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         const currentLevel = config['log-level'] || 'info';
         const currentIndex = levels.indexOf(currentLevel);
-        log(`Twingate Prefs: [DEBUG] Log Level current value: ${currentLevel}, index: ${currentIndex}`);
 
         if (currentIndex >= 0) {
             logLevelRow.set_selected(currentIndex);
@@ -238,7 +218,6 @@ export default class TwingatePreferences extends ExtensionPreferences {
         logLevelRow.connect('notify::selected', (widget) => {
             const newIndex = widget.get_selected();
             const newLevel = levels[newIndex];
-            log(`Twingate Prefs: [DEBUG] Changing log-level from ${currentLevel} to ${newLevel} (index ${newIndex})`);
             this._setTwingateConfig('log-level', newLevel);
         });
 
@@ -267,7 +246,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
                     app.activate();
                 }
             } catch (e) {
-                log(`Twingate Prefs: [ERROR] Error refreshing: ${e}`);
+                log(`Twingate Prefs: Error refreshing: ${e}`);
             }
         });
 
@@ -275,6 +254,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         refreshGroup.add(refreshRow);
     }
 
+    // pkexec is required because 'twingate config' needs root privileges.
+    // twingate is a system binary installed via package manager, not user-writable.
     _loadTwingateConfig() {
         try {
             const proc = Gio.Subprocess.new(
@@ -285,7 +266,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
             if (!proc.get_successful() || !stdout) {
                 const errorMsg = (stderr || 'Unknown error').trim();
-                log(`Twingate Prefs: [ERROR] pkexec twingate config failed: ${errorMsg}`);
+                log(`Twingate Prefs: pkexec config failed: ${errorMsg}`);
                 return null;
             }
 
@@ -300,7 +281,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
             return config;
         } catch (e) {
-            log(`Twingate Prefs: [ERROR] Error loading Twingate config: ${e}`);
+            log(`Twingate Prefs: Error loading config: ${e}`);
             return null;
         }
     }
@@ -312,7 +293,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
                 Gio.SubprocessFlags.NONE
             );
         } catch (e) {
-            log(`Twingate Prefs: [ERROR] Error setting Twingate config: ${e}`);
+            log(`Twingate Prefs: Error setting config: ${e}`);
         }
     }
 }
