@@ -4,7 +4,7 @@
   "main": "extension.js",
   "dependencies": {
     "@girs/gjs": "4.0.0-rc.3",
-    "@girs/gnome-shell": "^49.0.0"
+    "@girs/gnome-shell": "^50.0.0"
   },
   "author": "guillaume-gambs",
   "license": "GPL-3.0-or-later",
