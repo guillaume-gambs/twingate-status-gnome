@@ -16,9 +16,11 @@ jobs:
       - name: Set up Git repository
         uses: actions/checkout@v7
 
+      - name: Install gettext
+        run: sudo apt-get update && sudo apt-get install -y gettext zip
+
       - name: Create zip
-        run: |
-          zip -r twingate-status@guillaume-gambs.github.io.zip icons/ schemas/org.gnome.shell.extensions.twingate-status.gschema.xml extension.js prefs.js locale.js metadata.json stylesheet.css LICENSE
+        run: ./build.sh
 
       - name: Upload package
         uses: svenstaro/upload-release-action@v2

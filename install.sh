@@ -11,55 +11,33 @@ EXTENSION_DIR=~/.local/share/gnome-shell/extensions/twingate-status@guillaume-ga
 
 echo -e "${YELLOW}Installing Twingate Status extension...${NC}\n"
 
-# Vérifier que glib-compile-schemas est disponible
-if ! command -v glib-compile-schemas &> /dev/null; then
-    echo -e "${RED}Error: glib-compile-schemas is not installed${NC}"
-    echo "Install it with:"
-    echo "  Ubuntu/Debian: sudo apt install libglib2.0-dev-bin"
-    echo "  Arch/Manjaro: sudo pacman -S glib2"
-    echo "  Fedora: sudo dnf install glib2-devel"
-    exit 1
-fi
+for tool in glib-compile-schemas msgfmt zip; do
+    if ! command -v "$tool" &> /dev/null; then
+        echo -e "${RED}Error: $tool is not installed${NC}"
+        echo "Install it with:"
+        echo "  Ubuntu/Debian: sudo apt install libglib2.0-dev-bin gettext zip"
+        echo "  Arch/Manjaro: sudo pacman -S glib2 gettext zip"
+        echo "  Fedora: sudo dnf install glib2-devel gettext zip"
+        exit 1
+    fi
+done
 
-# Créer le répertoire de l'extension
-echo -e "${GREEN}Creating extension directory...${NC}"
-mkdir -p "$EXTENSION_DIR"
-mkdir -p "$EXTENSION_DIR/schemas"
-mkdir -p "$EXTENSION_DIR/icons"
+echo -e "${GREEN}Building extension...${NC}"
+"$(dirname "$0")/build.sh"
 
-# Copier les fichiers
+# Replace any previous install so removed files do not linger
 echo -e "${GREEN}Copying files...${NC}"
-cp extension.js "$EXTENSION_DIR/"
-cp prefs.js "$EXTENSION_DIR/"
-cp locale.js "$EXTENSION_DIR/"
-cp metadata.json "$EXTENSION_DIR/"
-cp stylesheet.css "$EXTENSION_DIR/"
-cp LICENSE "$EXTENSION_DIR/" 2>/dev/null || true
-cp -r icons/* "$EXTENSION_DIR/icons/"
+rm -rf "$EXTENSION_DIR"
+mkdir -p "$EXTENSION_DIR"
+cp -r "$(dirname "$0")/build/." "$EXTENSION_DIR/"
 
-# Copier et compiler les schémas
-if [ -d "schemas" ]; then
-    echo -e "${GREEN}Copying and compiling GSettings schemas...${NC}"
-    cp schemas/*.xml "$EXTENSION_DIR/schemas/"
-    glib-compile-schemas "$EXTENSION_DIR/schemas/"
+echo -e "${GREEN}Compiling GSettings schemas...${NC}"
+glib-compile-schemas "$EXTENSION_DIR/schemas/"
 
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Schemas compiled successfully${NC}"
-    else
-        echo -e "${RED}✗ Error compiling schemas${NC}"
-        exit 1
-    fi
-
-    # Vérifier que le fichier compilé existe
-    if [ -f "$EXTENSION_DIR/schemas/gschemas.compiled" ]; then
-        echo -e "${GREEN}✓ gschemas.compiled created${NC}"
-        ls -lh "$EXTENSION_DIR/schemas/gschemas.compiled"
-    else
-        echo -e "${RED}✗ gschemas.compiled was not created${NC}"
-        exit 1
-    fi
+if [ -f "$EXTENSION_DIR/schemas/gschemas.compiled" ]; then
+    echo -e "${GREEN}✓ gschemas.compiled created${NC}"
 else
-    echo -e "${RED}✗ schemas/ directory not found${NC}"
+    echo -e "${RED}✗ gschemas.compiled was not created${NC}"
     exit 1
 fi
 

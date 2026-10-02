@@ -1,0 +1,165 @@
+# Dutch translation for Twingate Status.
+# This file is distributed under the same license as the twingate-status package.
+msgid ""
+msgstr ""
+"Project-Id-Version: twingate-status\n"
+"PO-Revision-Date: 2026-10-02 00:00+0000\n"
+"Last-Translator: Guillaume Gambs\n"
+"Language-Team: none\n"
+"Report-Msgid-Bugs-To: https://github.com/guillaume-gambs/twingate-status-"
+"gnome/issues\n"
+"POT-Creation-Date: 2026-10-02 20:37+0200\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:72 extension.js:173
+msgid "Disconnected"
+msgstr "Niet verbonden"
+
+#: extension.js:85 extension.js:175
+msgid "Connect"
+msgstr "Verbinden"
+
+#: extension.js:89
+msgid "Settings"
+msgstr "Instellingen"
+
+#: extension.js:98
+msgid "Available Resources"
+msgstr "Beschikbare bronnen"
+
+#: extension.js:163
+msgid "Connected"
+msgstr "Verbonden"
+
+#: extension.js:165 extension.js:170
+msgid "Disconnect"
+msgstr "Verbinding verbreken"
+
+#: extension.js:168
+msgid "Authenticating"
+msgstr "Authenticeren"
+
+#: extension.js:250
+msgid "Version"
+msgstr "Versie"
+
+#: extension.js:290
+msgid "Connect to see resources"
+msgstr "Maak verbinding om bronnen te zien"
+
+#: extension.js:301 extension.js:313
+msgid "Loading error"
+msgstr "Laadfout"
+
+#: extension.js:325
+msgid "No resources available"
+msgstr "Geen bronnen beschikbaar"
+
+#: prefs.js:18
+msgid "Extension Settings"
+msgstr "Extensie-instellingen"
+
+#: prefs.js:19
+msgid "Interface and behavior configuration"
+msgstr "Interface- en gedragsconfiguratie"
+
+#: prefs.js:25
+msgid "Resource Refresh Interval"
+msgstr "Verversingsinterval voor bronnen"
+
+#: prefs.js:26
+msgid "Time between each list update (in seconds)"
+msgstr "Tijd tussen elke lijstupdate (in seconden)"
+
+#: prefs.js:52
+msgid "Twingate Configuration"
+msgstr "Twingate-configuratie"
+
+#: prefs.js:53
+msgid "Twingate configuration management"
+msgstr "Twingate-configuratiebeheer"
+
+#: prefs.js:61
+msgid "Error"
+msgstr "Fout"
+
+#: prefs.js:62
+msgid ""
+"Unable to load Twingate configuration.\n"
+"Make sure Twingate is installed.\n"
+"Try: sudo twingate config"
+msgstr ""
+"Kan Twingate-configuratie niet laden.\n"
+"Zorg ervoor dat Twingate is geïnstalleerd.\n"
+"Probeer: sudo twingate config"
+
+#: prefs.js:70 prefs.js:79
+msgid "Not configured"
+msgstr "Niet geconfigureerd"
+
+#: prefs.js:73
+msgid "Network"
+msgstr "Netwerk"
+
+#: prefs.js:82
+msgid "Controller URL"
+msgstr "Controller-URL"
+
+#: prefs.js:89
+msgid "Parameters"
+msgstr "Parameters"
+
+#: prefs.js:90
+msgid "Twingate behavior configuration"
+msgstr "Twingate-gedragsconfiguratie"
+
+#: prefs.js:98
+msgid "Autostart"
+msgstr "Automatisch starten"
+
+#: prefs.js:99
+msgid "Start Twingate automatically at startup"
+msgstr "Twingate automatisch starten bij opstarten"
+
+#: prefs.js:117
+msgid "Save Auth Data"
+msgstr "Authenticatiegegevens opslaan"
+
+#: prefs.js:118
+msgid "Save authentication data"
+msgstr "Authenticatiegegevens opslaan"
+
+#: prefs.js:136
+msgid "Sentry User Consent"
+msgstr "Sentry gebruikerstoestemming"
+
+#: prefs.js:137
+msgid "Consent to send error reports"
+msgstr "Toestemming om foutrapporten te verzenden"
+
+#: prefs.js:153 prefs.js:159
+msgid "Log Level"
+msgstr "Logniveau"
+
+#: prefs.js:154
+msgid "Log verbosity level"
+msgstr "Log verbositeitsniveau"
+
+#: prefs.js:160
+msgid "Select log level"
+msgstr "Selecteer logniveau"
+
+#: prefs.js:189
+msgid "Refresh Configuration"
+msgstr "Configuratie vernieuwen"
+
+#: prefs.js:190
+msgid "Reload settings from Twingate"
+msgstr "Instellingen opnieuw laden van Twingate"
+
+#: prefs.js:194
+msgid "Refresh"
+msgstr "Vernieuwen"

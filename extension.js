@@ -5,30 +5,45 @@ import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {_, setTranslatorSettings} from './locale.js';
+Gio._promisify(Gio.Subprocess.prototype, 'communicate_utf8_async');
+Gio._promisify(Gio.Subprocess.prototype, 'wait_async');
+
+const FAST_POLL_INTERVAL = 1000;
+const SLOW_POLL_INTERVAL = 10000;
+// Stop fast polling after this many ticks, e.g. when the polkit prompt is dismissed
+const MAX_FAST_POLL_TICKS = 60;
 
 export default class TwingateStatusIndicatorExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
-
-        setTranslatorSettings(this._settings);
-
         this._indicator = new TwingateIndicator(this._settings, this);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
     disable() {
-        if (this._indicator) {
-            this._indicator.stop();
-            this._indicator.destroy();
-            this._indicator = null;
-        }
+        this._indicator?.destroy();
+        this._indicator = null;
         this._settings = null;
     }
+}
+
+function isCancelled(e) {
+    return e instanceof GLib.Error && e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+}
+
+// St.BoxLayout:vertical was removed in GNOME 51, and its replacement
+// (orientation) only exists since GNOME 48
+function createVerticalBox(params) {
+    const box = new St.BoxLayout(params);
+    if (box.orientation !== undefined)
+        box.orientation = Clutter.Orientation.VERTICAL;
+    else
+        box.vertical = true;
+    return box;
 }
 
 const TwingateIndicator = GObject.registerClass(
@@ -38,11 +53,13 @@ const TwingateIndicator = GObject.registerClass(
 
             this._extension = extension;
             this._settings = settings;
+            this._cancellable = new Gio.Cancellable();
             this._iconNameOnline = 'twingate_on';
             this._iconNameAuthenticating = 'twingate_authenticating';
             this._iconNameOffline = 'twingate_off';
-            this._fastPollInterval = 1000;
-            this._slowPollInterval = 10000;
+            this._fastPollTicks = null;
+            this._statusPending = false;
+            this._actionPending = false;
 
             this._resourceRefreshInterval = this._settings.get_int('resource-refresh-interval') * 1000;
 
@@ -54,7 +71,6 @@ const TwingateIndicator = GObject.registerClass(
             });
 
             this._status = 'not-running';
-            this._version = this._getTwingateVersion();
 
             this.icon = new St.Icon({
                 style_class: this._iconNameOffline,
@@ -76,20 +92,6 @@ const TwingateIndicator = GObject.registerClass(
             });
             this._statusItem.add_child(this._statusLabel);
             this._statusSection.addMenuItem(this._statusItem);
-
-            if (this._version) {
-                this._versionLabel = new St.Label({
-                    text: `${_('Version')}: ${this._version}`,
-                    style_class: 'twingate-version-label'
-                });
-
-                this._versionItem = new PopupMenu.PopupBaseMenuItem({
-                    reactive: false,
-                    can_focus: false
-                });
-                this._versionItem.add_child(this._versionLabel);
-                this._statusSection.addMenuItem(this._versionItem);
-            }
 
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -123,8 +125,7 @@ const TwingateIndicator = GObject.registerClass(
                 overlay_scrollbars: true
             });
 
-            this._resourcesBox = new St.BoxLayout({
-                vertical: true,
+            this._resourcesBox = createVerticalBox({
                 style_class: 'twingate-resources-container'
             });
             this._resourcesScrollView.add_child(this._resourcesBox);
@@ -136,17 +137,34 @@ const TwingateIndicator = GObject.registerClass(
             scrollItem.add_child(this._resourcesScrollView);
             this._resourcesScrollSection.addMenuItem(scrollItem);
 
-            this._updateStatus();
-            this._addStatusWatch(this._slowPollInterval);
+            this._loadTwingateVersion();
             this._updateResourcesList();
+            this._pollStatus();
+            this._addStatusWatch(SLOW_POLL_INTERVAL);
         }
 
         openPreferences() {
             try {
                 this._extension.openPreferences();
             } catch (e) {
-                log(`Error opening preferences: ${e}`);
+                console.error(`Twingate: Error opening preferences: ${e}`);
             }
+        }
+
+        // Runs a command without blocking the shell main loop.
+        // Throws a CANCELLED error once the indicator is destroyed.
+        async _run(argv) {
+            const proc = Gio.Subprocess.new(
+                argv,
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            );
+            const [stdout, stderr] = await proc.communicate_utf8_async(null, this._cancellable);
+            this._cancellable.set_error_if_cancelled();
+            return {
+                ok: proc.get_successful(),
+                stdout: stdout ?? '',
+                stderr: stderr ?? ''
+            };
         }
 
         _setStatus(status) {
@@ -170,202 +188,271 @@ const TwingateIndicator = GObject.registerClass(
             }
         }
 
-        _updateStatus() {
+        async _updateStatus() {
+            let output;
             try {
-                const proc = Gio.Subprocess.new(
-                    ['twingate', 'status'],
-                    Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
-                );
-                const [, stdout] = proc.communicate_utf8(null, null);
-                const output = (stdout || '').trim().toLowerCase();
-
-                if (output.includes('online')) {
-                    this._setStatus('online');
-                } else if (output.includes('authenticating')) {
-                    this._setStatus('authenticating');
-                } else {
-                    this._setStatus('not-running');
-                }
+                const { stdout } = await this._run(['twingate', 'status']);
+                output = stdout.trim().toLowerCase();
             } catch (e) {
+                if (isCancelled(e))
+                    return;
+                output = '';
+            }
+
+            if (output.includes('online')) {
+                this._setStatus('online');
+            } else if (output.includes('authenticating')) {
+                this._setStatus('authenticating');
+            } else {
                 this._setStatus('not-running');
             }
         }
 
-        _getTwingateVersion() {
-            try {
-                const proc = Gio.Subprocess.new(
-                    ['twingate', 'version'],
-                    Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
-                );
-                const [, stdout] = proc.communicate_utf8(null, null);
-                const lines = (stdout || '').split('\n');
+        async _pollStatus() {
+            if (this._statusPending)
+                return;
 
-                if (lines.length > 0) {
-                    const match = lines[0].trim().match(/twingate\s+([\d.]+)\s*\|\s*([\d.]+)/);
-                    if (match)
-                        return `${match[1]} (${match[2]})`;
-                }
-            } catch (e) {
-                // ignore
+            this._statusPending = true;
+            const previousStatus = this._status;
+            try {
+                await this._updateStatus();
+            } finally {
+                this._statusPending = false;
             }
-            return null;
+
+            if (this._cancellable.is_cancelled())
+                return;
+
+            if (this._fastPollTicks !== null)
+                this._fastPollTicks++;
+
+            if (this._status !== previousStatus) {
+                this._onStatusChanged();
+            } else if (this._fastPollTicks !== null && this._fastPollTicks >= MAX_FAST_POLL_TICKS) {
+                this._fastPollTicks = null;
+                this._addStatusWatch(SLOW_POLL_INTERVAL);
+            }
         }
 
-        _handleAction() {
-            this._removeStatusWatch();
-            this._addStatusWatch(this._fastPollInterval, () => {
-                this._removeStatusWatch();
-                this._addStatusWatch(this._slowPollInterval);
-                this._updateResourcesList();
+        _onStatusChanged() {
+            if (this._fastPollTicks !== null) {
+                this._fastPollTicks = null;
+                this._addStatusWatch(SLOW_POLL_INTERVAL);
+            }
+            this._updateResourcesList();
+        }
+
+        async _loadTwingateVersion() {
+            let version = null;
+            try {
+                const { stdout } = await this._run(['twingate', 'version']);
+                const match = stdout.split('\n')[0].trim().match(/twingate\s+([\d.]+)\s*\|\s*([\d.]+)/);
+                if (match)
+                    version = `${match[1]} (${match[2]})`;
+            } catch (e) {
+                if (isCancelled(e))
+                    return;
+                console.debug(`Twingate: Unable to read version: ${e}`);
+            }
+
+            if (!version)
+                return;
+
+            const versionLabel = new St.Label({
+                text: `${_('Version')}: ${version}`,
+                style_class: 'twingate-version-label'
             });
+
+            const versionItem = new PopupMenu.PopupBaseMenuItem({
+                reactive: false,
+                can_focus: false
+            });
+            versionItem.add_child(versionLabel);
+            this._statusSection.addMenuItem(versionItem);
+        }
+
+        async _handleAction() {
+            // Ignore clicks while a polkit prompt is already open
+            if (this._actionPending)
+                return;
+
+            const stopping = this._status === 'online' || this._status === 'authenticating';
+            const [serviceCommand, desktopCommand] = stopping
+                ? ['service-stop', 'desktop-stop']
+                : ['service-start', 'desktop-start'];
+
+            this._actionPending = true;
+            this._fastPollTicks = 0;
+            this._addStatusWatch(FAST_POLL_INTERVAL);
 
             // pkexec is required because twingate service-start/stop need root privileges.
             // twingate is a system binary installed via package manager, not user-writable.
+            // The desktop notifier is only toggled once the service command succeeded,
+            // so dismissing the polkit prompt leaves both in their current state.
+            let serviceOk = false;
             try {
-                if (this._status === 'online' || this._status === 'authenticating') {
-                    Gio.Subprocess.new(['pkexec', 'twingate', 'service-stop'], Gio.SubprocessFlags.NONE);
-                    Gio.Subprocess.new(['twingate', 'desktop-stop'], Gio.SubprocessFlags.NONE);
-                } else {
-                    Gio.Subprocess.new(['pkexec', 'twingate', 'service-start'], Gio.SubprocessFlags.NONE);
-                    Gio.Subprocess.new(['twingate', 'desktop-start'], Gio.SubprocessFlags.NONE);
-                }
+                const proc = Gio.Subprocess.new(['pkexec', 'twingate', serviceCommand], Gio.SubprocessFlags.NONE);
+                await proc.wait_async(this._cancellable);
+                this._cancellable.set_error_if_cancelled();
+
+                serviceOk = proc.get_successful();
+                // pkexec exits with 126 when the polkit prompt is dismissed
+                if (!serviceOk && proc.get_exit_status() !== 126)
+                    console.error(`Twingate: twingate ${serviceCommand} failed with exit status ${proc.get_exit_status()}`);
             } catch (e) {
-                log(`Twingate: Failed to control service: ${e}`);
+                if (isCancelled(e))
+                    return;
+                console.error(`Twingate: Failed to control service: ${e}`);
+            } finally {
+                this._actionPending = false;
             }
-        }
 
-        _updateResourcesList() {
-            this._resourcesBox.destroy_all_children();
-
-            if (this._status !== 'online') {
-                const noResourceLabel = new St.Label({
-                    text: _('Connect to see resources'),
-                    style_class: 'twingate-resource-empty'
-                });
-                this._resourcesBox.add_child(noResourceLabel);
+            if (!serviceOk) {
+                this._fastPollTicks = null;
+                this._addStatusWatch(SLOW_POLL_INTERVAL);
                 return;
             }
 
             try {
-                const proc = Gio.Subprocess.new(
-                    ['twingate', 'resources'],
-                    Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
-                );
-                const [, stdout, stderr] = proc.communicate_utf8(null, null);
-
-                if (proc.get_successful() && stdout) {
-                    const lines = stdout.split('\n').filter(line => line.trim());
-
-                    if (lines.length > 1) {
-                        const header = lines[0];
-                        const colAddress = header.indexOf('ADDRESS');
-                        const colAlias = header.indexOf('ALIAS');
-                        const colAuth = header.indexOf('AUTH STATUS');
-
-                        for (let i = 1; i < lines.length; i++) {
-                            const line = lines[i];
-                            if (!line.trim()) continue;
-
-                            let name, address, authStatus;
-                            if (colAddress > 0 && colAlias > 0 && colAuth > 0 && line.length > colAddress) {
-                                name = line.substring(0, colAddress).trim();
-                                address = line.substring(colAddress, colAlias).trim();
-                                authStatus = line.length > colAuth ? line.substring(colAuth).trim() : '';
-                            } else {
-                                const parts = line.trim().split(/\s{2,}/);
-                                name = (parts[0] || '').trim();
-                                address = (parts[1] || '').trim();
-                                authStatus = (parts[3] || '').trim();
-                            }
-
-                            if (name) {
-                                const isAuthenticated = authStatus.toLowerCase().includes('auth expires');
-                                const isPending = authStatus.toLowerCase().includes('pending');
-
-                                let itemClass = 'twingate-resource-item';
-                                if (isAuthenticated)
-                                    itemClass += ' twingate-resource-item-auth';
-                                else if (isPending)
-                                    itemClass += ' twingate-resource-item-pending';
-                                else
-                                    itemClass += ' twingate-resource-item-noauth';
-
-                                const resourceBox = new St.BoxLayout({
-                                    vertical: true,
-                                    style_class: itemClass
-                                });
-
-                                const nameBox = new St.BoxLayout({
-                                    style_class: 'twingate-resource-name-box'
-                                });
-
-                                const iconLabel = new St.Label({
-                                    text: isAuthenticated ? '🔓' : isPending ? '⏳' : '🔒',
-                                    style_class: 'twingate-resource-icon'
-                                });
-                                nameBox.add_child(iconLabel);
-
-                                const nameLabel = new St.Label({
-                                    text: name,
-                                    style_class: 'twingate-resource-name'
-                                });
-                                nameBox.add_child(nameLabel);
-                                resourceBox.add_child(nameBox);
-
-                                if (address) {
-                                    const addressLabel = new St.Label({
-                                        text: address,
-                                        style_class: 'twingate-resource-address'
-                                    });
-                                    resourceBox.add_child(addressLabel);
-                                }
-
-                                if (authStatus) {
-                                    const authLabel = new St.Label({
-                                        text: authStatus,
-                                        style_class: isAuthenticated
-                                            ? 'twingate-resource-auth-ok'
-                                            : isPending
-                                                ? 'twingate-resource-auth-pending'
-                                                : 'twingate-resource-auth-none'
-                                    });
-                                    resourceBox.add_child(authLabel);
-                                }
-
-                                this._resourcesBox.add_child(resourceBox);
-                            }
-                        }
-                    } else {
-                        const noResourceLabel = new St.Label({
-                            text: _('No resources available'),
-                            style_class: 'twingate-resource-empty'
-                        });
-                        this._resourcesBox.add_child(noResourceLabel);
-                    }
-                } else {
-                    const errorMsg = (stderr || 'Command failed').trim();
-                    log(`Twingate: Resources command failed: ${errorMsg}`);
-
-                    const errorLabel = new St.Label({
-                        text: `${_('Loading error')}: ${errorMsg}`,
-                        style_class: 'twingate-resource-error'
-                    });
-                    this._resourcesBox.add_child(errorLabel);
-                }
+                Gio.Subprocess.new(['twingate', desktopCommand], Gio.SubprocessFlags.NONE);
             } catch (e) {
-                log(`Twingate: Error loading resources: ${e}`);
+                console.error(`Twingate: Failed to run twingate ${desktopCommand}: ${e}`);
+            }
+        }
 
-                const errorLabel = new St.Label({
-                    text: `${_('Loading error')}: ${e.message}`,
-                    style_class: 'twingate-resource-error'
+        _showResourceMessage(text, styleClass) {
+            this._resourcesBox.destroy_all_children();
+            this._resourcesBox.add_child(new St.Label({ text, style_class: styleClass }));
+        }
+
+        async _updateResourcesList() {
+            this._removeResourceTimeout();
+
+            if (this._status !== 'online') {
+                this._showResourceMessage(_('Connect to see resources'), 'twingate-resource-empty');
+                return;
+            }
+
+            let result;
+            try {
+                result = await this._run(['twingate', 'resources']);
+            } catch (e) {
+                if (isCancelled(e))
+                    return;
+                console.debug(`Twingate: Error loading resources: ${e}`);
+                this._showResourceMessage(`${_('Loading error')}: ${e.message}`, 'twingate-resource-error');
+                this._scheduleResourceUpdate();
+                return;
+            }
+
+            // Status may have changed while the command was running
+            if (this._status !== 'online')
+                return;
+
+            if (!result.ok || !result.stdout) {
+                const errorMsg = (result.stderr || 'Command failed').trim();
+                console.debug(`Twingate: Resources command failed: ${errorMsg}`);
+                this._showResourceMessage(`${_('Loading error')}: ${errorMsg}`, 'twingate-resource-error');
+            } else {
+                this._renderResources(result.stdout);
+            }
+
+            this._scheduleResourceUpdate();
+        }
+
+        _renderResources(stdout) {
+            const lines = stdout.split('\n').filter(line => line.trim());
+
+            if (lines.length <= 1) {
+                this._showResourceMessage(_('No resources available'), 'twingate-resource-empty');
+                return;
+            }
+
+            this._resourcesBox.destroy_all_children();
+
+            const header = lines[0];
+            const colAddress = header.indexOf('ADDRESS');
+            const colAlias = header.indexOf('ALIAS');
+            const colAuth = header.indexOf('AUTH STATUS');
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+
+                let name, address, authStatus;
+                if (colAddress > 0 && colAlias > 0 && colAuth > 0 && line.length > colAddress) {
+                    name = line.substring(0, colAddress).trim();
+                    address = line.substring(colAddress, colAlias).trim();
+                    authStatus = line.length > colAuth ? line.substring(colAuth).trim() : '';
+                } else {
+                    const parts = line.trim().split(/\s{2,}/);
+                    name = (parts[0] || '').trim();
+                    address = (parts[1] || '').trim();
+                    authStatus = (parts[3] || '').trim();
+                }
+
+                if (name)
+                    this._resourcesBox.add_child(this._buildResourceItem(name, address, authStatus));
+            }
+        }
+
+        _buildResourceItem(name, address, authStatus) {
+            const isAuthenticated = authStatus.toLowerCase().includes('auth expires');
+            const isPending = authStatus.toLowerCase().includes('pending');
+
+            let itemClass = 'twingate-resource-item';
+            if (isAuthenticated)
+                itemClass += ' twingate-resource-item-auth';
+            else if (isPending)
+                itemClass += ' twingate-resource-item-pending';
+            else
+                itemClass += ' twingate-resource-item-noauth';
+
+            const resourceBox = createVerticalBox({
+                style_class: itemClass
+            });
+
+            const nameBox = new St.BoxLayout({
+                style_class: 'twingate-resource-name-box'
+            });
+
+            const iconLabel = new St.Label({
+                text: isAuthenticated ? '🔓' : isPending ? '⏳' : '🔒',
+                style_class: 'twingate-resource-icon'
+            });
+            nameBox.add_child(iconLabel);
+
+            const nameLabel = new St.Label({
+                text: name,
+                style_class: 'twingate-resource-name'
+            });
+            nameBox.add_child(nameLabel);
+            resourceBox.add_child(nameBox);
+
+            if (address) {
+                const addressLabel = new St.Label({
+                    text: address,
+                    style_class: 'twingate-resource-address'
                 });
-                this._resourcesBox.add_child(errorLabel);
+                resourceBox.add_child(addressLabel);
             }
 
-            if (this._resourceUpdateTimeout) {
-                GLib.Source.remove(this._resourceUpdateTimeout);
-                this._resourceUpdateTimeout = null;
+            if (authStatus) {
+                const authLabel = new St.Label({
+                    text: authStatus,
+                    style_class: isAuthenticated
+                        ? 'twingate-resource-auth-ok'
+                        : isPending
+                            ? 'twingate-resource-auth-pending'
+                            : 'twingate-resource-auth-none'
+                });
+                resourceBox.add_child(authLabel);
             }
+
+            return resourceBox;
+        }
+
+        _scheduleResourceUpdate() {
+            this._removeResourceTimeout();
             this._resourceUpdateTimeout = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 this._resourceRefreshInterval,
@@ -379,21 +466,20 @@ const TwingateIndicator = GObject.registerClass(
             );
         }
 
-        _addStatusWatch(pollInterval, onChange) {
+        _removeResourceTimeout() {
+            if (this._resourceUpdateTimeout) {
+                GLib.Source.remove(this._resourceUpdateTimeout);
+                this._resourceUpdateTimeout = null;
+            }
+        }
+
+        _addStatusWatch(pollInterval) {
             this._removeStatusWatch();
             this._pollerTimeoutHandle = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 pollInterval,
                 () => {
-                    const oldStatus = this._status;
-                    this._updateStatus();
-
-                    if (oldStatus !== this._status) {
-                        if (onChange) {
-                            onChange();
-                        }
-                    }
-
+                    this._pollStatus();
                     return GLib.SOURCE_CONTINUE;
                 }
             );
@@ -406,21 +492,17 @@ const TwingateIndicator = GObject.registerClass(
             }
         }
 
-        stop() {
+        destroy() {
+            this._cancellable.cancel();
             this._removeStatusWatch();
-
-            if (this._resourceUpdateTimeout) {
-                GLib.Source.remove(this._resourceUpdateTimeout);
-                this._resourceUpdateTimeout = null;
-            }
+            this._removeResourceTimeout();
 
             if (this._settingsChangedId) {
                 this._settings.disconnect(this._settingsChangedId);
                 this._settingsChangedId = null;
             }
 
-            this.icon?.destroy();
-            this.icon = null;
+            super.destroy();
         }
     }
 );
