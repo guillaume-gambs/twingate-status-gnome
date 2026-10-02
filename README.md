@@ -42,7 +42,7 @@ Twingate for Linux should be installed before this extension. `pkexec` (polkit) 
 Installing from source also needs `glib-compile-schemas`, `msgfmt` (gettext) and `zip`.
 
 ## Compatibility
-Tested working on Arch/Manjaro and GNOME Shell 46-50.
+Tested working on Arch/Manjaro and GNOME Shell 46-51.
 
 This extension calls the following commands. If these don't work when you run them manually the extension won't be able to change the connection status.
 
@@ -137,7 +137,7 @@ journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate
 ## Troubleshooting
 
 ### Extension not loading
-1. Check that GNOME Shell version is 46-50
+1. Check that GNOME Shell version is 46-51
 2. Ensure Twingate is installed: `which twingate`
 3. Verify schema compilation: `ls ~/.local/share/gnome-shell/extensions/twingate-status@guillaume-gambs.github.io/schemas/gschemas.compiled`
 4. Check logs: `journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate`
@@ -160,4 +160,4 @@ GPL-3.0-or-later
 ## Credits
 
 Originally created by [eudes](https://github.com/eudes/twingate-status-gnome).
-Forked and enhanced by [guillaume-gambs](https://github.com/guillaume-gambs/twingate-status-gnome) with: multi-state indicator, i18n (7 languages), settings panel, resource list with auth status, GNOME 50 support, and security fixes.
+Forked and enhanced by [guillaume-gambs](https://github.com/guillaume-gambs/twingate-status-gnome) with: multi-state indicator, i18n (7 languages), settings panel, resource list with auth status, GNOME 50-51 support, and security fixes.

@@ -35,6 +35,17 @@ function isCancelled(e) {
     return e instanceof GLib.Error && e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
 }
 
+// St.BoxLayout:vertical was removed in GNOME 51, and its replacement
+// (orientation) only exists since GNOME 48
+function createVerticalBox(params) {
+    const box = new St.BoxLayout(params);
+    if (box.orientation !== undefined)
+        box.orientation = Clutter.Orientation.VERTICAL;
+    else
+        box.vertical = true;
+    return box;
+}
+
 const TwingateIndicator = GObject.registerClass(
     class TwingateIndicator extends PanelMenu.Button {
         constructor(settings, extension) {
@@ -114,8 +125,7 @@ const TwingateIndicator = GObject.registerClass(
                 overlay_scrollbars: true
             });
 
-            this._resourcesBox = new St.BoxLayout({
-                vertical: true,
+            this._resourcesBox = createVerticalBox({
                 style_class: 'twingate-resources-container'
             });
             this._resourcesScrollView.add_child(this._resourcesBox);
@@ -397,8 +407,7 @@ const TwingateIndicator = GObject.registerClass(
             else
                 itemClass += ' twingate-resource-item-noauth';
 
-            const resourceBox = new St.BoxLayout({
-                vertical: true,
+            const resourceBox = createVerticalBox({
                 style_class: itemClass
             });
 

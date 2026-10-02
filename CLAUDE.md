@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A GNOME Shell extension (GJS, ES modules, GNOME 46-50) that shows Twingate connection status in the top bar. UUID: `twingate-status@guillaume-gambs.github.io`. There is no test suite. The only build step is `build.sh`, which compiles `po/*.po` into `locale/` and zips the result.
+A GNOME Shell extension (GJS, ES modules, GNOME 46-51) that shows Twingate connection status in the top bar. UUID: `twingate-status@guillaume-gambs.github.io`. There is no test suite. The only build step is `build.sh`, which compiles `po/*.po` into `locale/` and zips the result.
 
 ## Commands
 
@@ -20,7 +20,9 @@ journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate        # runtime lo
 
 After reinstalling, `extension.js` changes need a shell restart (logout/login on Wayland, Alt+F2 `r` on X11). `prefs.js` runs in a separate process and only needs the prefs window reopened.
 
-Smoke test without touching the running session: copy `build/` into a scratch `XDG_DATA_HOME`, then run `dbus-run-session` with scratch `XDG_CONFIG_HOME`/`XDG_CACHE_HOME`. Inside it, set `org.gnome.shell enabled-extensions` with `gsettings` and start `gnome-shell --headless --unsafe-mode --virtual-monitor 1280x800 --wayland-display=<unique>`. `org.gnome.Shell.Eval` can then inspect `Main.panel.statusArea['<uuid>']`, and `org.gnome.Shell.Extensions.GetExtensionErrors` reports load errors.
+Smoke test without touching the running session: copy `build/` into a scratch `XDG_DATA_HOME`, then run `dbus-run-session` with scratch `XDG_CONFIG_HOME`/`XDG_CACHE_HOME`. Inside it, set `org.gnome.shell enabled-extensions` with `gsettings` and start `gnome-shell --headless --unsafe-mode --virtual-monitor 1280x800 --wayland-display=<unique>`. `org.gnome.Shell.Eval` can then inspect `Main.panel.statusArea['<uuid>']`, and `org.gnome.Shell.Extensions.GetExtensionErrors` reports load errors. Put stub `twingate`/`pkexec` scripts first in `PATH` to avoid touching the real Twingate or popping a polkit prompt on the host.
+
+To test a GNOME release newer than the host, run the same thing in a Fedora container that ships it (`fedora:45` = GNOME 51). The container needs: a user matching your uid (dbus-daemon refuses unknown uids), `/etc/machine-id`, a system bus (`dbus-daemon --system --fork` as root), and `rm -rf /run/systemd/seats` so the shell uses its dummy login manager instead of requiring logind.
 
 `build.sh` holds the only list of shipped files. `install.sh` and `.github/workflows/zip-to-publish.yml` (runs on GitHub release creation) both call it. A new source file only needs adding there.
 
@@ -67,6 +69,7 @@ The extension is published on EGO and recent commits address reviewer feedback. 
 - No `Extension.lookupByUUID()`; pass the extension instance down (done for `openPreferences()`).
 - Every `pkexec` call needs a justification comment explaining why root is required.
 - `metadata.json` has no `version` field (EGO manages it). Update `shell-version` when supporting a new GNOME release.
+- St API differences across the supported range go through small helpers. `createVerticalBox()` exists because `St.BoxLayout:vertical` was removed in 51 while its replacement `orientation` only exists since 48.
 - Create objects in `enable()`, not at module load. Nothing may stay alive in module scope after `disable()`. The module-level `Gio._promisify` call is the standard accepted exception.
 
 All code, comments, and docs in English.
