@@ -2,8 +2,7 @@ import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gio from 'gi://Gio';
 
-import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import { Translator } from './locale.js';
+import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 export default class TwingatePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -15,50 +14,16 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         const settings = this.getSettings();
 
-        const t = new Translator(settings);
-
-        // Groupe des paramètres de l'extension
         const extensionGroup = new Adw.PreferencesGroup({
-            title: t.gettext('Extension Settings'),
-            description: t.gettext('Interface and behavior configuration')
+            title: _('Extension Settings'),
+            description: _('Interface and behavior configuration')
         });
         page.add(extensionGroup);
 
-        // Langue
-        const languageRow = new Adw.ComboRow({
-            title: t.gettext('Language'),
-            subtitle: t.gettext('Interface language')
-        });
-
-        const languages = new Gtk.StringList();
-        const availableLanguages = t.getAvailableLanguages();
-        const langCodes = availableLanguages.map(lang => lang.code);
-        const langNames = availableLanguages.map(lang => lang.name);
-
-        langNames.forEach(name => languages.append(name));
-
-        languageRow.set_model(languages);
-
-        const currentLang = settings.get_string('language');
-
-        const currentLangIndex = langCodes.indexOf(currentLang);
-        if (currentLangIndex >= 0) {
-            languageRow.set_selected(currentLangIndex);
-        }
-
-        languageRow.connect('notify::selected', (widget) => {
-            const selectedIndex = widget.get_selected();
-            if (selectedIndex >= 0 && selectedIndex < langCodes.length) {
-                settings.set_string('language', langCodes[selectedIndex]);
-            }
-        });
-
-        extensionGroup.add(languageRow);
-
-        // Intervalle de rafraîchissement des ressources
+        // Resource refresh interval
         const refreshIntervalRow = new Adw.ActionRow({
-            title: t.gettext('Resource Refresh Interval'),
-            subtitle: t.gettext('Time between each list update (in seconds)')
+            title: _('Resource Refresh Interval'),
+            subtitle: _('Time between each list update (in seconds)')
         });
 
         const currentInterval = settings.get_int('resource-refresh-interval');
@@ -82,26 +47,19 @@ export default class TwingatePreferences extends ExtensionPreferences {
         refreshIntervalRow.add_suffix(refreshIntervalSpinButton);
         extensionGroup.add(refreshIntervalRow);
 
-        const noteRow = new Adw.ActionRow({
-            title: t.gettext('ℹ️ Note'),
-            subtitle: t.gettext('Restart GNOME Shell to apply language changes\n(Alt+F2, type \'r\' on X11 or logout/login on Wayland)')
-        });
-        extensionGroup.add(noteRow);
-
-        // Groupe d'informations Twingate
+        // Twingate information
         const infoGroup = new Adw.PreferencesGroup({
-            title: t.gettext('Twingate Configuration'),
-            description: t.gettext('Twingate configuration management')
+            title: _('Twingate Configuration'),
+            description: _('Twingate configuration management')
         });
         page.add(infoGroup);
 
         const config = this._loadTwingateConfig();
 
         if (!config) {
-            log('Twingate Prefs: Failed to load configuration');
             const errorRow = new Adw.ActionRow({
-                title: t.gettext('Error'),
-                subtitle: t.gettext('Unable to load Twingate configuration.\nMake sure Twingate is installed.\nTry: sudo twingate config')
+                title: _('Error'),
+                subtitle: _('Unable to load Twingate configuration.\nMake sure Twingate is installed.\nTry: sudo twingate config')
             });
             infoGroup.add(errorRow);
             return;
@@ -109,27 +67,27 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
 
         // Network
-        const networkValue = config.network || t.gettext('Not configured');
+        const networkValue = config.network || _('Not configured');
 
         const networkRow = new Adw.ActionRow({
-            title: t.gettext('Network'),
+            title: _('Network'),
             subtitle: networkValue
         });
         infoGroup.add(networkRow);
 
         // Controller URL
-        const controllerValue = config['controller-url'] || t.gettext('Not configured');
+        const controllerValue = config['controller-url'] || _('Not configured');
 
         const controllerRow = new Adw.ActionRow({
-            title: t.gettext('Controller URL'),
+            title: _('Controller URL'),
             subtitle: controllerValue
         });
         infoGroup.add(controllerRow);
 
-        // Groupe des paramètres modifiables
+        // Editable Twingate settings
         const settingsGroup = new Adw.PreferencesGroup({
-            title: t.gettext('Parameters'),
-            description: t.gettext('Twingate behavior configuration')
+            title: _('Parameters'),
+            description: _('Twingate behavior configuration')
         });
         page.add(settingsGroup);
 
@@ -137,8 +95,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         const autostartValue = config.autostart || 'false';
 
         const autostartRow = new Adw.ActionRow({
-            title: t.gettext('Autostart'),
-            subtitle: t.gettext('Start Twingate automatically at startup')
+            title: _('Autostart'),
+            subtitle: _('Start Twingate automatically at startup')
         });
         const autostartSwitch = new Gtk.Switch({
             active: autostartValue === 'true',
@@ -156,8 +114,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         const saveAuthValue = config['save-auth-data'] || 'false';
 
         const saveAuthRow = new Adw.ActionRow({
-            title: t.gettext('Save Auth Data'),
-            subtitle: t.gettext('Save authentication data')
+            title: _('Save Auth Data'),
+            subtitle: _('Save authentication data')
         });
         const saveAuthSwitch = new Gtk.Switch({
             active: saveAuthValue === 'true',
@@ -175,8 +133,8 @@ export default class TwingatePreferences extends ExtensionPreferences {
         const sentryValue = config['sentry-user-consent'] || 'false';
 
         const sentryRow = new Adw.ActionRow({
-            title: t.gettext('Sentry User Consent'),
-            subtitle: t.gettext('Consent to send error reports')
+            title: _('Sentry User Consent'),
+            subtitle: _('Consent to send error reports')
         });
         const sentrySwitch = new Gtk.Switch({
             active: sentryValue === 'true',
@@ -192,14 +150,14 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         // Log Level
         const logLevelGroup = new Adw.PreferencesGroup({
-            title: t.gettext('Log Level'),
-            description: t.gettext('Log verbosity level')
+            title: _('Log Level'),
+            description: _('Log verbosity level')
         });
         page.add(logLevelGroup);
 
         const logLevelRow = new Adw.ComboRow({
-            title: t.gettext('Log Level'),
-            subtitle: t.gettext('Select log level')
+            title: _('Log Level'),
+            subtitle: _('Select log level')
         });
 
         const logLevels = new Gtk.StringList();
@@ -223,22 +181,22 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
         logLevelGroup.add(logLevelRow);
 
-        // Bouton de rafraîchissement
+        // Refresh button
         const refreshGroup = new Adw.PreferencesGroup();
         page.add(refreshGroup);
 
         const refreshRow = new Adw.ActionRow({
-            title: t.gettext('Refresh Configuration'),
-            subtitle: t.gettext('Reload settings from Twingate')
+            title: _('Refresh Configuration'),
+            subtitle: _('Reload settings from Twingate')
         });
 
         const refreshButton = new Gtk.Button({
-            label: t.gettext('Refresh'),
+            label: _('Refresh'),
             valign: Gtk.Align.CENTER
         });
         refreshButton.add_css_class('suggested-action');
         refreshButton.connect('clicked', () => {
-            // Ouvrir les préférences via l'extension (recrée la fenêtre)
+            // Reopen the preferences window to reload the configuration
             try {
                 const app = window.get_application();
                 if (app) {
@@ -246,7 +204,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
                     app.activate();
                 }
             } catch (e) {
-                log(`Twingate Prefs: Error refreshing: ${e}`);
+                console.error(`Twingate Prefs: Error refreshing: ${e}`);
             }
         });
 
@@ -266,7 +224,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
             if (!proc.get_successful() || !stdout) {
                 const errorMsg = (stderr || 'Unknown error').trim();
-                log(`Twingate Prefs: pkexec config failed: ${errorMsg}`);
+                console.debug(`Twingate Prefs: pkexec config failed: ${errorMsg}`);
                 return null;
             }
 
@@ -281,7 +239,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
 
             return config;
         } catch (e) {
-            log(`Twingate Prefs: Error loading config: ${e}`);
+            console.debug(`Twingate Prefs: Error loading config: ${e}`);
             return null;
         }
     }
@@ -293,7 +251,7 @@ export default class TwingatePreferences extends ExtensionPreferences {
                 Gio.SubprocessFlags.NONE
             );
         } catch (e) {
-            log(`Twingate Prefs: Error setting config: ${e}`);
+            console.error(`Twingate Prefs: Error setting config: ${e}`);
         }
     }
 }

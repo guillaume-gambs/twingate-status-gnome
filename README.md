@@ -11,7 +11,7 @@ Clicking on the menu entry starts or stops the connection.
   - ⟳ **Authenticating** (yellow): Authentication in progress
   - ✕ **Not Running** (red): Disconnected
 
-- **Multi-language support**: Available in 7 languages with automatic detection from system locale:
+- **Multi-language support**: Available in 7 languages following the system locale:
   - 🇬🇧 English (default)
   - 🇫🇷 Français
   - 🇪🇸 Español
@@ -32,13 +32,14 @@ Clicking on the menu entry starts or stops the connection.
   - Log level (debug, info, warn, error)
 
 - **Extension preferences**: Customize the extension behavior:
-  - **Language selection**: Choose your preferred language or use automatic detection
   - **Resource refresh interval**: Adjust how often the resource list updates (30-600 seconds)
 
 - **Version display**: Shows the installed Twingate version in the menu
 
 ## Requirements
 Twingate for Linux should be installed before this extension. `pkexec` (polkit) must be available to start/stop the Twingate service with elevated privileges.
+
+Installing from source also needs `glib-compile-schemas`, `msgfmt` (gettext) and `zip`.
 
 ## Compatibility
 Tested working on Arch/Manjaro and GNOME Shell 46-50.
@@ -95,17 +96,20 @@ From the Twingate configuration section, you can modify:
 Note: These settings require administrator privileges (using `pkexec`) to modify the Twingate configuration.
 
 ### Extension Preferences
-- **Language**: Choose your preferred language (auto-detection or manual selection from 7 languages)
 - **Resource Refresh Interval**: Set update frequency when connected (30-600 seconds, default: 120)
-
-Changes to language settings require a GNOME Shell restart (Alt+F2, type 'r' on X11 or logout/login on Wayland).
 
 ## Localization
 
-The extension supports 7 languages with automatic system detection or manual selection:
+The extension uses gettext and follows the system locale:
 - 🇬🇧 English (default) • 🇫🇷 Français • 🇪🇸 Español • 🇩🇪 Deutsch • 🇮🇹 Italiano • 🇵🇹 Português • 🇳🇱 Nederlands
 
-To add more languages, edit the `locale.js` file and add your translations to the `TRANSLATIONS` object.
+Translations live in `po/`. After changing UI strings, regenerate the template and merge it into the existing translations:
+```bash
+xgettext --from-code=UTF-8 --language=JavaScript --keyword=_ --add-comments=Translators \
+  --package-name=twingate-status -o po/twingate-status@guillaume-gambs.github.io.pot extension.js prefs.js
+for po in po/*.po; do msgmerge -U --backup=none "$po" po/twingate-status@guillaume-gambs.github.io.pot; done
+```
+To add a language: `msginit -i po/twingate-status@guillaume-gambs.github.io.pot -l <lang> -o po/<lang>.po`.
 
 ## Development
 
@@ -117,14 +121,15 @@ The extension is built with:
 File structure:
 - `extension.js` - Main extension code
 - `prefs.js` - Settings/preferences panel
-- `locale.js` - Translation system
+- `po/` - gettext translations
 - `stylesheet.css` - UI styling
 - `metadata.json` - Extension metadata
 - `schemas/` - GSettings schemas for extension preferences
+- `build.sh` - Builds the release zip (compiles translations), used by `install.sh` and CI
 
 ### Debug Logging
 
-The extension includes debug logging. To view logs:
+Errors are logged with `console.error()`, diagnostics with `console.debug()` (only shown when GJS debug logging is enabled). To view logs:
 ```bash
 journalctl -f -o cat /usr/bin/gnome-shell | grep -i twingate
 ```

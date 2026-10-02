@@ -1,0 +1,165 @@
+# German translation for Twingate Status.
+# This file is distributed under the same license as the twingate-status package.
+msgid ""
+msgstr ""
+"Project-Id-Version: twingate-status\n"
+"PO-Revision-Date: 2026-10-02 00:00+0000\n"
+"Last-Translator: Guillaume Gambs\n"
+"Language-Team: none\n"
+"Report-Msgid-Bugs-To: https://github.com/guillaume-gambs/twingate-status-"
+"gnome/issues\n"
+"POT-Creation-Date: 2026-10-02 20:37+0200\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:72 extension.js:173
+msgid "Disconnected"
+msgstr "Getrennt"
+
+#: extension.js:85 extension.js:175
+msgid "Connect"
+msgstr "Verbinden"
+
+#: extension.js:89
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: extension.js:98
+msgid "Available Resources"
+msgstr "Verfügbare Ressourcen"
+
+#: extension.js:163
+msgid "Connected"
+msgstr "Verbunden"
+
+#: extension.js:165 extension.js:170
+msgid "Disconnect"
+msgstr "Trennen"
+
+#: extension.js:168
+msgid "Authenticating"
+msgstr "Authentifizierung"
+
+#: extension.js:250
+msgid "Version"
+msgstr "Version"
+
+#: extension.js:290
+msgid "Connect to see resources"
+msgstr "Verbinden Sie sich, um Ressourcen zu sehen"
+
+#: extension.js:301 extension.js:313
+msgid "Loading error"
+msgstr "Ladefehler"
+
+#: extension.js:325
+msgid "No resources available"
+msgstr "Keine Ressourcen verfügbar"
+
+#: prefs.js:18
+msgid "Extension Settings"
+msgstr "Erweiterungseinstellungen"
+
+#: prefs.js:19
+msgid "Interface and behavior configuration"
+msgstr "Oberflächen- und Verhaltenskonfiguration"
+
+#: prefs.js:25
+msgid "Resource Refresh Interval"
+msgstr "Ressourcen-Aktualisierungsintervall"
+
+#: prefs.js:26
+msgid "Time between each list update (in seconds)"
+msgstr "Zeit zwischen jeder Listenaktualisierung (in Sekunden)"
+
+#: prefs.js:52
+msgid "Twingate Configuration"
+msgstr "Twingate-Konfiguration"
+
+#: prefs.js:53
+msgid "Twingate configuration management"
+msgstr "Twingate-Konfigurationsverwaltung"
+
+#: prefs.js:61
+msgid "Error"
+msgstr "Fehler"
+
+#: prefs.js:62
+msgid ""
+"Unable to load Twingate configuration.\n"
+"Make sure Twingate is installed.\n"
+"Try: sudo twingate config"
+msgstr ""
+"Twingate-Konfiguration kann nicht geladen werden.\n"
+"Stellen Sie sicher, dass Twingate installiert ist.\n"
+"Versuchen Sie: sudo twingate config"
+
+#: prefs.js:70 prefs.js:79
+msgid "Not configured"
+msgstr "Nicht konfiguriert"
+
+#: prefs.js:73
+msgid "Network"
+msgstr "Netzwerk"
+
+#: prefs.js:82
+msgid "Controller URL"
+msgstr "Controller-URL"
+
+#: prefs.js:89
+msgid "Parameters"
+msgstr "Parameter"
+
+#: prefs.js:90
+msgid "Twingate behavior configuration"
+msgstr "Twingate-Verhaltenskonfiguration"
+
+#: prefs.js:98
+msgid "Autostart"
+msgstr "Autostart"
+
+#: prefs.js:99
+msgid "Start Twingate automatically at startup"
+msgstr "Twingate beim Start automatisch starten"
+
+#: prefs.js:117
+msgid "Save Auth Data"
+msgstr "Authentifizierungsdaten speichern"
+
+#: prefs.js:118
+msgid "Save authentication data"
+msgstr "Authentifizierungsdaten speichern"
+
+#: prefs.js:136
+msgid "Sentry User Consent"
+msgstr "Sentry-Benutzerzustimmung"
+
+#: prefs.js:137
+msgid "Consent to send error reports"
+msgstr "Zustimmung zum Senden von Fehlerberichten"
+
+#: prefs.js:153 prefs.js:159
+msgid "Log Level"
+msgstr "Protokollstufe"
+
+#: prefs.js:154
+msgid "Log verbosity level"
+msgstr "Protokoll-Ausführlichkeitsstufe"
+
+#: prefs.js:160
+msgid "Select log level"
+msgstr "Protokollstufe auswählen"
+
+#: prefs.js:189
+msgid "Refresh Configuration"
+msgstr "Konfiguration aktualisieren"
+
+#: prefs.js:190
+msgid "Reload settings from Twingate"
+msgstr "Einstellungen von Twingate neu laden"
+
+#: prefs.js:194
+msgid "Refresh"
+msgstr "Aktualisieren"
