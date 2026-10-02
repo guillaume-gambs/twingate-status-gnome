@@ -10,6 +10,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 Gio._promisify(Gio.Subprocess.prototype, 'communicate_utf8_async');
+Gio._promisify(Gio.Subprocess.prototype, 'wait_async');
 
 const FAST_POLL_INTERVAL = 1000;
 const SLOW_POLL_INTERVAL = 10000;
@@ -47,6 +48,7 @@ const TwingateIndicator = GObject.registerClass(
             this._iconNameOffline = 'twingate_off';
             this._fastPollTicks = null;
             this._statusPending = false;
+            this._actionPending = false;
 
             this._resourceRefreshInterval = this._settings.get_int('resource-refresh-interval') * 1000;
 
@@ -259,22 +261,52 @@ const TwingateIndicator = GObject.registerClass(
             this._statusSection.addMenuItem(versionItem);
         }
 
-        _handleAction() {
+        async _handleAction() {
+            // Ignore clicks while a polkit prompt is already open
+            if (this._actionPending)
+                return;
+
+            const stopping = this._status === 'online' || this._status === 'authenticating';
+            const [serviceCommand, desktopCommand] = stopping
+                ? ['service-stop', 'desktop-stop']
+                : ['service-start', 'desktop-start'];
+
+            this._actionPending = true;
             this._fastPollTicks = 0;
             this._addStatusWatch(FAST_POLL_INTERVAL);
 
             // pkexec is required because twingate service-start/stop need root privileges.
             // twingate is a system binary installed via package manager, not user-writable.
+            // The desktop notifier is only toggled once the service command succeeded,
+            // so dismissing the polkit prompt leaves both in their current state.
+            let serviceOk = false;
             try {
-                if (this._status === 'online' || this._status === 'authenticating') {
-                    Gio.Subprocess.new(['pkexec', 'twingate', 'service-stop'], Gio.SubprocessFlags.NONE);
-                    Gio.Subprocess.new(['twingate', 'desktop-stop'], Gio.SubprocessFlags.NONE);
-                } else {
-                    Gio.Subprocess.new(['pkexec', 'twingate', 'service-start'], Gio.SubprocessFlags.NONE);
-                    Gio.Subprocess.new(['twingate', 'desktop-start'], Gio.SubprocessFlags.NONE);
-                }
+                const proc = Gio.Subprocess.new(['pkexec', 'twingate', serviceCommand], Gio.SubprocessFlags.NONE);
+                await proc.wait_async(this._cancellable);
+                this._cancellable.set_error_if_cancelled();
+
+                serviceOk = proc.get_successful();
+                // pkexec exits with 126 when the polkit prompt is dismissed
+                if (!serviceOk && proc.get_exit_status() !== 126)
+                    console.error(`Twingate: twingate ${serviceCommand} failed with exit status ${proc.get_exit_status()}`);
             } catch (e) {
+                if (isCancelled(e))
+                    return;
                 console.error(`Twingate: Failed to control service: ${e}`);
+            } finally {
+                this._actionPending = false;
+            }
+
+            if (!serviceOk) {
+                this._fastPollTicks = null;
+                this._addStatusWatch(SLOW_POLL_INTERVAL);
+                return;
+            }
+
+            try {
+                Gio.Subprocess.new(['twingate', desktopCommand], Gio.SubprocessFlags.NONE);
+            } catch (e) {
+                console.error(`Twingate: Failed to run twingate ${desktopCommand}: ${e}`);
             }
         }
 
